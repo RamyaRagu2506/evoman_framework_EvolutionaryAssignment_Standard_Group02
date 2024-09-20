@@ -18,6 +18,7 @@ from math import fabs,sqrt
 import glob, os
 
 
+
 # choose this for not using visuals and thus making experiments faster
 headless = True
 if headless:
@@ -63,7 +64,7 @@ n_vars = (env.get_num_sensors()+1)*n_hidden_neurons + (n_hidden_neurons+1)*5
 dom_u = 1
 dom_l = -1
 npop = 100
-gens = 30
+gens = 100
 mutation = 0.2
 last_best = 0
 

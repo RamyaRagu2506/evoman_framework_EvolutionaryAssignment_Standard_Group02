@@ -102,8 +102,8 @@ class Environment(object):
 
         # initializes pygame library
         pygame.init()
-        self.print_logs("MESSAGE: Pygame initialized for simulation.")
-
+        #self.print_logs("MESSAGE: Pygame initialized for simulation.")
+        # commented out cuz otherwise it prints every time when parallelising
         # initializes sound library for playing mode
         if self.sound == "on":
             pygame.mixer.init()
