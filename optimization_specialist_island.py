@@ -19,46 +19,55 @@ def save_population_state(populations, fitnesses, generation, experiment_name):
         population_path = os.path.join(experiment_name, f'memetic_population_island_{island}.pkl')
         with open(population_path, 'wb') as f:
             pickle.dump([populations[island], fitnesses[island], generation], f)
-        print(f"Island {island}: Population state saved successfully.")
+        print(f"[INFO] Island {island}: Population state saved successfully for generation {generation}.")
 
 # Load the population and fitness values (solution state)
 def load_population_state(experiment_name):
     populations = []
     fitnesses = []
+    generation = 0
     for island in range(num_islands):
         population_path = os.path.join(experiment_name, f'memetic_population_island_{island}.pkl')
         with open(population_path, 'rb') as f:
             population, fitness, generation = pickle.load(f)
         populations.append(population)
         fitnesses.append(fitness)
-        print(f"Island {island}: Population state loaded successfully.")
+        print(f"[INFO] Island {island}: Population state loaded successfully from generation {generation}.")
     return populations, fitnesses, generation
 
 # Initialize population
 def initialize_population(npop, n_vars, dom_l, dom_u):
+    print(f"[INFO] Initializing population of size {npop} with {n_vars} variables between [{dom_l}, {dom_u}]")
     return np.random.uniform(dom_l, dom_u, (npop, n_vars))
 
 # Evaluate fitness of the population
 def evaluate_population(env, pop):
-    return np.array([env.play(pcont=individual)[0] for individual in pop])
+    print(f"[INFO] Evaluating fitness for population of size {len(pop)}...")
+    fitness = np.array([env.play(pcont=individual)[0] for individual in pop])
+    print(f"[INFO] Fitness evaluation completed.")
+    return fitness
 
 # Selection based on fitness (roulette wheel selection)
 def selection(pop, fit_pop):
+    print("[INFO] Performing selection based on fitness...")
     min_fitness = np.min(fit_pop)
     if min_fitness < 0:
         fit_pop = fit_pop - min_fitness + 1e-6  # Shift fitness values to be positive
     fit_sum = np.sum(fit_pop)
     probs = fit_pop / fit_sum if fit_sum > 0 else np.ones(len(fit_pop)) / len(fit_pop)
     selected_idx = np.random.choice(np.arange(len(pop)), size=len(pop), p=probs)
+    print("[INFO] Selection completed.")
     return pop[selected_idx]
 
 # Crossover
 def crossover(parent1, parent2, n_vars):
+    print("[INFO] Performing crossover...")
     cross_point = np.random.randint(1, n_vars)
     return np.concatenate((parent1[:cross_point], parent2[cross_point:]))
 
 # Mutation
 def mutation(offspring, mutation_rate, dom_l, dom_u):
+    print("[INFO] Performing mutation...")
     for i in range(len(offspring)):
         if np.random.rand() < mutation_rate:
             offspring[i] += np.random.uniform(dom_l, dom_u)
@@ -66,18 +75,21 @@ def mutation(offspring, mutation_rate, dom_l, dom_u):
 
 # Local Search (Hill Climbing)
 def hill_climb(env, individual, mutation_rate, n_iterations=5):
+    print("[INFO] Performing local search (hill climbing)...")
     best_fitness = env.play(pcont=individual)[0]
     best_individual = individual.copy()
-    for _ in range(n_iterations):
+    for iteration in range(n_iterations):
         new_individual = mutation(individual.copy(), mutation_rate, -1, 1)
         new_fitness = env.play(pcont=new_individual)[0]
         if new_fitness > best_fitness:
             best_fitness = new_fitness
             best_individual = new_individual
+            print(f"[INFO] Iteration {iteration+1}/{n_iterations}: Improved fitness to {best_fitness:.6f}")
     return best_individual, best_fitness
 
 # Migration: Exchange individuals between islands
 def migrate_islands(populations, fitnesses):
+    print("[INFO] Performing migration between islands...")
     for i in range(num_islands):
         source_island = populations[i]
         target_island = populations[(i + 1) % num_islands]
@@ -89,6 +101,8 @@ def migrate_islands(populations, fitnesses):
         # Replace random individuals in the target island with these best individuals
         replace_indices = np.random.choice(len(target_island), migration_size, replace=False)
         target_island[replace_indices] = best_individuals
+
+        print(f"[INFO] Migrated {migration_size} best individuals from Island {i} to Island {(i + 1) % num_islands}")
 
     return populations
 
@@ -108,6 +122,7 @@ def plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_n
     plot_path = os.path.join(experiment_name, 'fitness_over_generations.png')
     plt.savefig(plot_path)
     plt.show()
+    print(f"[INFO] Fitness plot saved to {plot_path}.")
 
 # Memetic Algorithm with Island Model
 def island_model_memetic_algorithm(env, populations, fitnesses, npop, gens, ini_g, n_vars, dom_l, dom_u, mutation_rate, experiment_name):
@@ -124,6 +139,8 @@ def island_model_memetic_algorithm(env, populations, fitnesses, npop, gens, ini_
             fit_pop = fitnesses[island]
             best_fitness_list[island].append(np.max(fit_pop))
             mean_fitness_list[island].append(np.mean(fit_pop))
+
+            print(f"[INFO] Island {island + 1}: Best fitness: {np.max(fit_pop):.6f}, Mean fitness: {np.mean(fit_pop):.6f}")
 
             # Selection
             selected_pop = selection(populations[island], fit_pop)
@@ -183,15 +200,15 @@ def main():
     # Check if previous evolution exists, else start new evolution
     if all([os.path.exists(experiment_name + f'/memetic_population_island_{i}.pkl') for i in range(num_islands)]):
         # Continue evolution
-        print("\nCONTINUING EVOLUTION\n")
+        print("\n[INFO] CONTINUING EVOLUTION\n")
         populations, fitnesses, ini_g = load_population_state(experiment_name)
     else:
         # New evolution
-        print("\nNEW EVOLUTION\n")
+        print("\n[INFO] NEW EVOLUTION\n")
         populations = []
         fitnesses = []
         for island in range(num_islands):
-            print(f"\nInitializing Island {island + 1}:")
+            print(f"\n[INFO] Initializing Island {island + 1}:")
             pop = initialize_population(npop, n_vars, dom_l, dom_u)
             fit_pop = evaluate_population(env, pop)
             populations.append(pop)
@@ -199,7 +216,7 @@ def main():
         ini_g = 0
 
     # Run the Island Model Memetic Algorithm
-    print("\nRunning the Island Model Memetic Algorithm...")
+    print("\n[INFO] Running the Island Model Memetic Algorithm...")
     final_populations, final_fitnesses, best_fitness_list, mean_fitness_list = island_model_memetic_algorithm(
         env, populations, fitnesses, npop, gens, ini_g, n_vars, dom_l, dom_u, mutation_rate, experiment_name)
 
