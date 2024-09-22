@@ -49,7 +49,7 @@ n_vars = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1)
 
 no_parents = 10
 pop_size = 100
-gens = 30
+gens = 100
 tau = 1/np.sqrt(pop_size)    #according to book p.59
 
 def simulation(env,x):
@@ -238,9 +238,12 @@ solutions = [pop, fit_pop, step_sizes]
 env.update_solutions(solutions)  
 
 
-best_current_solution_index = np.argmax(fit_pop)
+best_current_solution_index = np.argmax(fit_pop) # keep track of best individual overall
 best_current_solution = pop[best_current_solution_index]
-	
+best_current_solution_fitness = fit_pop[best_current_solution_index]
+best_current_step_size = step_sizes[best_current_solution_index]
+
+
 for i in range(ini_g+1, gens):
     # offspring, offspring_step_size = recombination(no_parents, step_sizes, pop) # for uniform random recombination
     offspring, offspring_step_size = blend_recombination(step_sizes, pop, fit_pop, alpha=0.5) # for blend recombination
@@ -248,10 +251,34 @@ for i in range(ini_g+1, gens):
     offspring, offspring_step_size = mutate(offspring, offspring_step_size, tau)
     # f_offspring = evaluate(offspring)
     f_offspring = evaluate_fitnesses(env, offspring)
-	#comma strategy
+
+    #comma strategy
     pop, step_sizes = survivor_selection(offspring, f_offspring, offspring_step_size, pop_size)
     # fit_pop = evaluate(pop)
     fit_pop = evaluate_fitnesses(env, pop)
+
+
+    if np.max(fit_pop) < best_current_solution_fitness: # if the best individual in the new population is worse than the current best
+        sorted_indices = np.argsort(fit_pop) # Sort the population by fitness (ascending order, so worst comes first)
+        # Remove the worst individual (first index in sorted order) and keep the rest
+        pop_without_worst = pop[sorted_indices[1:]]  # Removing the worst one (index 0)
+        step_sizes_without_worst = step_sizes[sorted_indices[1:]]
+        fit_pop_without_worst = np.delete(fit_pop, sorted_indices[0]) # remove lowest value from fit_pop (type: list)
+
+        # Add the best current solution to the population
+        pop = np.vstack((pop_without_worst, best_current_solution))
+        step_sizes = np.vstack((step_sizes_without_worst, best_current_step_size))
+        fit_pop = np.append(fit_pop_without_worst, best_current_solution_fitness)
+
+        print("Best individual was not updated, replacing worst individual with overall best solution: ", best_current_solution_fitness)
+
+    elif np.max(fit_pop) > best_current_solution_fitness: # if the best individual in the new population is better than the current best
+        best_current_solution_index = np.argmax(fit_pop)
+        best_current_solution_fitness = fit_pop[best_current_solution_index]
+        best_current_solution = pop[best_current_solution_index]
+        best_current_step_size = step_sizes[best_current_solution_index]
+
+        print("Best individual updated with fitness was updated: ", best_current_solution_fitness)
 
 
 	#from other file 
@@ -280,22 +307,22 @@ for i in range(ini_g+1, gens):
     
 
 
-# Test saved demo solutions for each enemy
-for en in range(1, 9):
-	# Update the enemy
-	env.update_parameter('enemies', [en])
-
-	# Load specialist controller
-	sol = np.loadtxt('solutions_demo/demo_' + str(en) + '.txt')
-	print('\n LOADING SAVED SPECIALIST SOLUTION FOR ENEMY ' + str(en) + ' \n')
-	env.play(sol)
-
-fim = time.time() # prints total execution time for experiment
-print( '\nExecution time: '+str(round((fim-ini)/60))+' minutes \n')
-print( '\nExecution time: '+str(round((fim-ini)))+' seconds \n')
-
-file = open(experiment_name+'/neuroended', 'w')  # saves control (simulation has ended) file for bash loop file
-file.close()
-
-
-env.state_to_log() # checks environment state
+# # Test saved demo solutions for each enemy
+# for en in range(1, 9):
+# 	# Update the enemy
+# 	env.update_parameter('enemies', [en])
+#
+# 	# Load specialist controller
+# 	sol = np.loadtxt('solutions_demo/demo_' + str(en) + '.txt')
+# 	print('\n LOADING SAVED SPECIALIST SOLUTION FOR ENEMY ' + str(en) + ' \n')
+# 	env.play(sol)
+#
+# fim = time.time() # prints total execution time for experiment
+# print( '\nExecution time: '+str(round((fim-ini)/60))+' minutes \n')
+# print( '\nExecution time: '+str(round((fim-ini)))+' seconds \n')
+#
+# file = open(experiment_name+'/neuroended', 'w')  # saves control (simulation has ended) file for bash loop file
+# file.close()
+#
+#
+# env.state_to_log() # checks environment state
