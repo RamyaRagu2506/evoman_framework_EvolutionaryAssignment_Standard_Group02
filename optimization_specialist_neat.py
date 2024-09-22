@@ -60,11 +60,19 @@ def save_best_genome(genome, experiment_name, generation):
     print(f"Best genome saved for generation {generation + 1}.", flush=True)
 
 # Save the NEAT population state
-def save_population_state(population, experiment_name):
+def save_population_state(population, experiment_name, generation):
     population_path = os.path.join(experiment_name, 'neat_state.pkl')
     with open(population_path, 'wb') as f:
-        pickle.dump(population, f)
+        pickle.dump([population, generation], f)
     print("Population state saved successfully.", flush=True)
+
+# Load the NEAT population state
+def load_population_state(experiment_name):
+    population_path = os.path.join(experiment_name, 'neat_state.pkl')
+    with open(population_path, 'rb') as f:
+        population, generation = pickle.load(f)
+    print("Population state loaded successfully.", flush=True)
+    return population, generation
 
 # Save generation results
 def save_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness):
@@ -74,6 +82,7 @@ def save_results(experiment_name, generation, best_fitness, mean_fitness, std_fi
                        f"Mean Fitness: {mean_fitness:.6f}, Std Fitness: {std_fitness:.6f}\n")
     print(f"Results saved for generation {generation + 1}.", flush=True)
 
+# Plot fitness over generations and save as image
 def plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_name):
     plt.figure(figsize=(10, 6))
     plt.plot(generations, best_fitness_list, label='Best Fitness', color='b', marker='o')
@@ -85,16 +94,16 @@ def plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_n
     plt.grid(True)
 
     # Save the plot to the experiment directory
-    plt.savefig(f'{experiment_name}/fitness_over_generations.png')
+    plot_path = os.path.join(experiment_name, 'fitness_over_generations.png')
+    plt.savefig(plot_path)
     plt.show()
-
 
 # Main NEAT evolution function
 def run_neat_evolution(population, generations, config, env, experiment_name):
     # Lists to store fitness values for plotting
     best_fitness_list = []
     mean_fitness_list = []
-
+    
     for generation in range(generations):
         print(f"\n========== Running Generation {generation + 1} ==========", flush=True)
         
@@ -127,19 +136,19 @@ def run_neat_evolution(population, generations, config, env, experiment_name):
             save_best_genome(best_genome, experiment_name, generation)
 
             # Save the population state
-            save_population_state(population, experiment_name)
-            
+            save_population_state(population, experiment_name, generation)
+    
     # Return the best genome and fitness data for plotting
-    generations = list(range(1, generations + 1))
-    return best_genome, best_fitness_list, mean_fitness_list, generations
+    generations_list = list(range(1, generations + 1))
+    return best_genome, best_fitness_list, mean_fitness_list, generations_list
 
-
+# Main function to run the NEAT algorithm
 def main():
     print("Starting NEAT Evolution...", flush=True)
 
     # Parameters
     gens = 30
-    experiment_name = 'neat_optimization'
+    experiment_name = 'neat_optimization_v2_enemy8'
     config_file = 'neat_config.txt'
 
     if not os.path.exists(experiment_name):
@@ -148,7 +157,7 @@ def main():
     # Initialize the environment
     n_hidden_neurons = 10
     env = Environment(experiment_name=experiment_name,
-                      enemies=[5],  # Adjust the enemy as needed
+                      enemies=[8],  # Adjust the enemy as needed
                       playermode="ai",
                       player_controller=player_controller(n_hidden_neurons),
                       enemymode="static",
@@ -158,16 +167,14 @@ def main():
 
     print("Environment setup complete.", flush=True)
 
-    # Initialize NEAT population
+    # Check if previous evolution exists, else start new evolution
     if not os.path.exists(experiment_name + '/neat_state.pkl'):
         print('\nNEW EVOLUTION\n', flush=True)
         pop_neat, config_neat = initialize_neat_population(config_file)
         ini_g = 0
     else:
         print('\nCONTINUING EVOLUTION\n', flush=True)
-        with open(experiment_name + '/neat_state.pkl', 'rb') as f:
-            pop_neat = pickle.load(f)
-        ini_g = pop_neat.generation
+        pop_neat, ini_g = load_population_state(experiment_name)
 
     # Run NEAT evolution
     best_genome, best_fitness_list, mean_fitness_list, generations = run_neat_evolution(

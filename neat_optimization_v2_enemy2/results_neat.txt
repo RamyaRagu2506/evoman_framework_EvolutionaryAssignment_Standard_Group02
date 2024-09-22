@@ -1,0 +1,60 @@
+
+Generation 1: Best Fitness: 92.937405, Mean Fitness: 16.322722, Std Fitness: 31.197173
+
+Generation 2: Best Fitness: 92.937405, Mean Fitness: 18.596061, Std Fitness: 32.729756
+
+Generation 3: Best Fitness: 92.937405, Mean Fitness: 20.551276, Std Fitness: 35.684865
+
+Generation 4: Best Fitness: 92.937405, Mean Fitness: 21.061805, Std Fitness: 36.220685
+
+Generation 5: Best Fitness: 92.937405, Mean Fitness: 19.922896, Std Fitness: 35.641603
+
+Generation 6: Best Fitness: 92.937405, Mean Fitness: 19.766436, Std Fitness: 36.393410
+
+Generation 7: Best Fitness: 92.937405, Mean Fitness: 20.071720, Std Fitness: 36.672585
+
+Generation 8: Best Fitness: 92.937405, Mean Fitness: 20.260094, Std Fitness: 36.604162
+
+Generation 9: Best Fitness: 92.937405, Mean Fitness: 20.321824, Std Fitness: 37.080561
+
+Generation 10: Best Fitness: 92.937405, Mean Fitness: 20.706402, Std Fitness: 37.423945
+
+Generation 11: Best Fitness: 92.937405, Mean Fitness: 20.715123, Std Fitness: 37.440404
+
+Generation 12: Best Fitness: 92.937405, Mean Fitness: 20.715123, Std Fitness: 37.440404
+
+Generation 13: Best Fitness: 93.002788, Mean Fitness: 20.724690, Std Fitness: 37.458722
+
+Generation 14: Best Fitness: 93.202788, Mean Fitness: 20.758385, Std Fitness: 37.520363
+
+Generation 15: Best Fitness: 93.202788, Mean Fitness: 20.802729, Std Fitness: 37.601552
+
+Generation 16: Best Fitness: 93.202788, Mean Fitness: 20.833780, Std Fitness: 37.659439
+
+Generation 17: Best Fitness: 93.202788, Mean Fitness: 20.890638, Std Fitness: 37.762627
+
+Generation 18: Best Fitness: 93.202788, Mean Fitness: 20.890638, Std Fitness: 37.762627
+
+Generation 19: Best Fitness: 93.202788, Mean Fitness: 20.890638, Std Fitness: 37.762627
+
+Generation 20: Best Fitness: 93.202788, Mean Fitness: 20.894578, Std Fitness: 37.770084
+
+Generation 21: Best Fitness: 93.202788, Mean Fitness: 39.455723, Std Fitness: 44.214660
+
+Generation 22: Best Fitness: 93.202788, Mean Fitness: 72.466168, Std Fitness: 33.210405
+
+Generation 23: Best Fitness: 93.202788, Mean Fitness: 82.124474, Std Fitness: 19.543497
+
+Generation 24: Best Fitness: 93.202788, Mean Fitness: 84.783618, Std Fitness: 18.827308
+
+Generation 25: Best Fitness: 93.202788, Mean Fitness: 85.309755, Std Fitness: 18.351868
+
+Generation 26: Best Fitness: 93.207043, Mean Fitness: 88.089155, Std Fitness: 14.452985
+
+Generation 27: Best Fitness: 93.409567, Mean Fitness: 88.217807, Std Fitness: 14.329113
+
+Generation 28: Best Fitness: 93.409567, Mean Fitness: 92.379631, Std Fitness: 1.078874
+
+Generation 29: Best Fitness: 93.409567, Mean Fitness: 92.496234, Std Fitness: 0.860965
+
+Generation 30: Best Fitness: 93.409567, Mean Fitness: 92.702742, Std Fitness: 0.438552

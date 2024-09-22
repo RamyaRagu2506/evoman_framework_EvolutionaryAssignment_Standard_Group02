@@ -1,100 +1,30 @@
-Generation 1: Best Fitness: 93.207043, Mean Fitness: 57.295597
-Generation 2: Best Fitness: 92.818216, Mean Fitness: 62.442493
-Generation 3: Best Fitness: 92.658358, Mean Fitness: 74.466656
-Generation 4: Best Fitness: 92.932142, Mean Fitness: 70.965902
-Generation 5: Best Fitness: 92.690612, Mean Fitness: 72.274624
-Generation 6: Best Fitness: 93.409567, Mean Fitness: 77.505311
-Generation 7: Best Fitness: 93.202788, Mean Fitness: 77.646939
-Generation 8: Best Fitness: 93.202788, Mean Fitness: 80.239752
-Generation 9: Best Fitness: 93.318596, Mean Fitness: 79.109685
-Generation 10: Best Fitness: 93.409567, Mean Fitness: 78.434259
-Generation 11: Best Fitness: 93.409567, Mean Fitness: 75.221069
-Generation 12: Best Fitness: 92.690612, Mean Fitness: 78.511106
-Generation 13: Best Fitness: 93.067281, Mean Fitness: 78.022228
-Generation 14: Best Fitness: 92.937405, Mean Fitness: 81.768374
-Generation 15: Best Fitness: 93.207043, Mean Fitness: 79.013889
-Generation 16: Best Fitness: 92.846708, Mean Fitness: 78.503588
-Generation 1: Best Fitness: 92.448142, Mean Fitness: 60.187189, Standard Deviation Fitness: 33.555230
-Generation 2: Best Fitness: 92.690612, Mean Fitness: 64.208096, Standard Deviation Fitness: 33.245045
-Generation 3: Best Fitness: 92.629516, Mean Fitness: 68.459274, Standard Deviation Fitness: 31.582087
-Generation 4: Best Fitness: 92.937405, Mean Fitness: 72.901999, Standard Deviation Fitness: 26.720981
-Generation 5: Best Fitness: 92.932142, Mean Fitness: 71.792568, Standard Deviation Fitness: 26.552433
-Generation 6: Best Fitness: 92.931940, Mean Fitness: 70.646701, Standard Deviation Fitness: 26.153661
-Generation 7: Best Fitness: 93.882006, Mean Fitness: 74.295759, Standard Deviation Fitness: 29.071297
-Generation 8: Best Fitness: 93.409567, Mean Fitness: 73.851999, Standard Deviation Fitness: 29.024937
-Generation 9: Best Fitness: 93.409567, Mean Fitness: 77.819287, Standard Deviation Fitness: 23.828872
-Generation 10: Best Fitness: 93.409567, Mean Fitness: 78.712078, Standard Deviation Fitness: 24.728737
-Generation 11: Best Fitness: 93.202788, Mean Fitness: 75.109561, Standard Deviation Fitness: 24.648181
-Generation 12: Best Fitness: 93.202788, Mean Fitness: 73.379563, Standard Deviation Fitness: 26.628594
-Generation 13: Best Fitness: 93.202788, Mean Fitness: 75.687123, Standard Deviation Fitness: 27.690091
-Generation 14: Best Fitness: 93.207043, Mean Fitness: 74.086443, Standard Deviation Fitness: 26.377888
-Generation 15: Best Fitness: 93.202788, Mean Fitness: 77.959155, Standard Deviation Fitness: 19.664547
-Generation 16: Best Fitness: 92.932142, Mean Fitness: 76.096392, Standard Deviation Fitness: 23.097634
-Generation 17: Best Fitness: 93.336168, Mean Fitness: 78.439597, Standard Deviation Fitness: 20.312102
-Generation 18: Best Fitness: 93.002788, Mean Fitness: 75.607453, Standard Deviation Fitness: 21.426860
-Generation 19: Best Fitness: 92.647040, Mean Fitness: 75.670886, Standard Deviation Fitness: 24.538584
-Generation 20: Best Fitness: 93.202788, Mean Fitness: 80.804086, Standard Deviation Fitness: 19.415133
-Generation 21: Best Fitness: 92.658358, Mean Fitness: 75.421191, Standard Deviation Fitness: 26.629462
-Generation 22: Best Fitness: 92.802788, Mean Fitness: 78.382779, Standard Deviation Fitness: 23.245492
-Generation 23: Best Fitness: 92.867281, Mean Fitness: 80.464514, Standard Deviation Fitness: 21.952747
-Generation 24: Best Fitness: 92.690612, Mean Fitness: 82.545767, Standard Deviation Fitness: 16.727029
-Generation 25: Best Fitness: 93.409567, Mean Fitness: 85.927670, Standard Deviation Fitness: 11.723492
-Generation 26: Best Fitness: 92.796054, Mean Fitness: 83.831305, Standard Deviation Fitness: 15.494355
-Generation 27: Best Fitness: 92.932142, Mean Fitness: 83.307299, Standard Deviation Fitness: 13.153227
-Generation 28: Best Fitness: 93.002788, Mean Fitness: 83.942500, Standard Deviation Fitness: 13.611645
-Generation 29: Best Fitness: 92.690612, Mean Fitness: 82.990784, Standard Deviation Fitness: 14.036155
-Generation 30: Best Fitness: 93.409567, Mean Fitness: 82.400706, Standard Deviation Fitness: 14.365380
-Generation 1: Best Fitness: 93.007043, Mean Fitness: 65.362228, Standard Deviation Fitness: 33.985502
-Generation 2: Best Fitness: 93.132142, Mean Fitness: 69.785482, Standard Deviation Fitness: 29.828641
-Generation 3: Best Fitness: 92.690612, Mean Fitness: 74.027016, Standard Deviation Fitness: 26.971786
-Generation 4: Best Fitness: 92.247040, Mean Fitness: 72.392632, Standard Deviation Fitness: 29.216505
-Generation 5: Best Fitness: 92.931940, Mean Fitness: 69.899149, Standard Deviation Fitness: 32.500331
-Generation 1: Best Fitness: 92.732142, Mean Fitness: 67.517365, Standard Deviation Fitness: 32.424458
-Generation 2: Best Fitness: 92.932142, Mean Fitness: 62.232010, Standard Deviation Fitness: 36.778254
-Generation 3: Best Fitness: 93.700134, Mean Fitness: 66.294784, Standard Deviation Fitness: 34.599043
-Generation 4: Best Fitness: 93.409567, Mean Fitness: 78.082128, Standard Deviation Fitness: 22.732574
-Generation 5: Best Fitness: 92.690612, Mean Fitness: 75.757571, Standard Deviation Fitness: 26.825272
-Generation 6: Best Fitness: 93.002788, Mean Fitness: 80.439428, Standard Deviation Fitness: 18.323393
-Generation 7: Best Fitness: 92.690612, Mean Fitness: 76.686798, Standard Deviation Fitness: 23.643617
-Generation 8: Best Fitness: 92.690612, Mean Fitness: 74.751174, Standard Deviation Fitness: 26.239168
-Generation 9: Best Fitness: 92.876036, Mean Fitness: 76.844404, Standard Deviation Fitness: 26.088920
-Generation 10: Best Fitness: 92.937405, Mean Fitness: 77.605769, Standard Deviation Fitness: 24.751976
-Generation 11: Best Fitness: 93.207043, Mean Fitness: 76.840441, Standard Deviation Fitness: 27.486258
-Generation 12: Best Fitness: 93.563047, Mean Fitness: 72.215014, Standard Deviation Fitness: 28.600243
-Generation 13: Best Fitness: 93.409567, Mean Fitness: 76.485964, Standard Deviation Fitness: 27.323406
-Generation 14: Best Fitness: 93.207043, Mean Fitness: 78.513651, Standard Deviation Fitness: 25.146904
-Generation 15: Best Fitness: 93.409567, Mean Fitness: 75.757679, Standard Deviation Fitness: 26.825780
-Generation 16: Best Fitness: 93.409567, Mean Fitness: 77.443040, Standard Deviation Fitness: 23.945506
-Generation 17: Best Fitness: 92.647040, Mean Fitness: 79.366925, Standard Deviation Fitness: 21.301632
-Generation 18: Best Fitness: 93.331940, Mean Fitness: 73.339406, Standard Deviation Fitness: 28.219607
-Generation 19: Best Fitness: 92.890612, Mean Fitness: 80.194200, Standard Deviation Fitness: 23.240445
-Generation 1: Best Fitness: 93.207043, Mean Fitness: 57.257291, Standard Deviation Fitness: 36.787161
-Generation 2: Best Fitness: 93.209567, Mean Fitness: 64.876305, Standard Deviation Fitness: 32.563060
-Generation 3: Best Fitness: 93.409567, Mean Fitness: 59.606667, Standard Deviation Fitness: 36.618564
-Generation 4: Best Fitness: 93.207043, Mean Fitness: 67.896219, Standard Deviation Fitness: 30.078953
-Generation 5: Best Fitness: 92.796054, Mean Fitness: 69.620236, Standard Deviation Fitness: 30.887490
-Generation 6: Best Fitness: 93.202788, Mean Fitness: 73.360614, Standard Deviation Fitness: 26.739758
-Generation 7: Best Fitness: 93.409567, Mean Fitness: 74.300314, Standard Deviation Fitness: 27.874803
-Generation 8: Best Fitness: 93.002788, Mean Fitness: 79.206485, Standard Deviation Fitness: 22.416914
-Generation 9: Best Fitness: 92.796054, Mean Fitness: 78.498606, Standard Deviation Fitness: 21.273965
-Generation 10: Best Fitness: 93.336168, Mean Fitness: 79.108480, Standard Deviation Fitness: 18.901238
-Generation 11: Best Fitness: 93.872124, Mean Fitness: 79.048068, Standard Deviation Fitness: 23.542252
-Generation 12: Best Fitness: 92.690612, Mean Fitness: 78.882380, Standard Deviation Fitness: 23.527269
-Generation 13: Best Fitness: 93.409567, Mean Fitness: 81.941190, Standard Deviation Fitness: 19.714594
-Generation 14: Best Fitness: 92.690612, Mean Fitness: 80.812653, Standard Deviation Fitness: 19.707761
-Generation 15: Best Fitness: 93.409567, Mean Fitness: 79.044813, Standard Deviation Fitness: 20.187294
-Generation 16: Best Fitness: 92.647040, Mean Fitness: 76.543050, Standard Deviation Fitness: 24.292821
-Generation 17: Best Fitness: 93.882006, Mean Fitness: 80.768088, Standard Deviation Fitness: 17.945958
-Generation 18: Best Fitness: 93.331940, Mean Fitness: 83.251204, Standard Deviation Fitness: 17.089148
-Generation 19: Best Fitness: 93.207043, Mean Fitness: 74.783602, Standard Deviation Fitness: 28.657582
-Generation 20: Best Fitness: 93.002788, Mean Fitness: 76.808157, Standard Deviation Fitness: 25.919765
-Generation 21: Best Fitness: 93.002788, Mean Fitness: 80.434452, Standard Deviation Fitness: 21.170005
-Generation 22: Best Fitness: 93.409567, Mean Fitness: 79.719206, Standard Deviation Fitness: 23.870404
-Generation 23: Best Fitness: 93.207043, Mean Fitness: 78.868213, Standard Deviation Fitness: 21.943693
-Generation 24: Best Fitness: 93.409567, Mean Fitness: 83.766542, Standard Deviation Fitness: 16.034664
-Generation 25: Best Fitness: 93.002788, Mean Fitness: 82.755478, Standard Deviation Fitness: 18.699900
-Generation 26: Best Fitness: 93.002788, Mean Fitness: 80.265280, Standard Deviation Fitness: 20.305395
-Generation 27: Best Fitness: 93.337405, Mean Fitness: 83.028527, Standard Deviation Fitness: 14.967345
-Generation 28: Best Fitness: 93.409567, Mean Fitness: 81.657581, Standard Deviation Fitness: 18.907360
-Generation 29: Best Fitness: 92.658358, Mean Fitness: 83.199934, Standard Deviation Fitness: 16.209416
-Generation 30: Best Fitness: 93.409567, Mean Fitness: 81.406458, Standard Deviation Fitness: 19.957798
+Generation 1: Best Fitness: 93.337405, Mean Fitness: 49.545449, Standard Deviation Fitness: 40.836224
+Generation 2: Best Fitness: 93.207043, Mean Fitness: 57.612058, Standard Deviation Fitness: 36.369981
+Generation 3: Best Fitness: 93.409567, Mean Fitness: 66.857950, Standard Deviation Fitness: 33.460513
+Generation 4: Best Fitness: 93.202788, Mean Fitness: 69.905349, Standard Deviation Fitness: 32.160912
+Generation 5: Best Fitness: 93.409567, Mean Fitness: 69.016852, Standard Deviation Fitness: 33.415027
+Generation 6: Best Fitness: 93.202788, Mean Fitness: 67.485185, Standard Deviation Fitness: 36.182159
+Generation 7: Best Fitness: 93.537405, Mean Fitness: 79.661609, Standard Deviation Fitness: 25.507752
+Generation 8: Best Fitness: 93.409567, Mean Fitness: 79.386246, Standard Deviation Fitness: 25.972168
+Generation 9: Best Fitness: 93.002788, Mean Fitness: 75.645176, Standard Deviation Fitness: 27.462178
+Generation 10: Best Fitness: 93.185064, Mean Fitness: 80.425643, Standard Deviation Fitness: 20.521673
+Generation 11: Best Fitness: 93.267281, Mean Fitness: 77.958873, Standard Deviation Fitness: 25.419192
+Generation 12: Best Fitness: 92.931940, Mean Fitness: 81.054916, Standard Deviation Fitness: 21.138270
+Generation 13: Best Fitness: 92.796054, Mean Fitness: 81.099826, Standard Deviation Fitness: 22.417903
+Generation 14: Best Fitness: 92.690612, Mean Fitness: 82.672962, Standard Deviation Fitness: 19.156348
+Generation 15: Best Fitness: 93.202788, Mean Fitness: 83.750389, Standard Deviation Fitness: 18.302050
+Generation 16: Best Fitness: 93.375050, Mean Fitness: 80.599262, Standard Deviation Fitness: 19.072706
+Generation 17: Best Fitness: 93.409567, Mean Fitness: 78.556890, Standard Deviation Fitness: 24.286829
+Generation 18: Best Fitness: 93.409567, Mean Fitness: 76.568508, Standard Deviation Fitness: 24.311625
+Generation 19: Best Fitness: 93.375050, Mean Fitness: 78.006016, Standard Deviation Fitness: 22.800564
+Generation 20: Best Fitness: 93.382720, Mean Fitness: 78.629958, Standard Deviation Fitness: 24.564002
+Generation 21: Best Fitness: 92.690612, Mean Fitness: 76.867670, Standard Deviation Fitness: 24.231459
+Generation 22: Best Fitness: 92.690612, Mean Fitness: 82.363783, Standard Deviation Fitness: 17.639811
+Generation 23: Best Fitness: 93.769562, Mean Fitness: 80.468895, Standard Deviation Fitness: 19.653251
+Generation 24: Best Fitness: 93.202788, Mean Fitness: 81.889545, Standard Deviation Fitness: 17.614803
+Generation 25: Best Fitness: 92.931940, Mean Fitness: 81.549789, Standard Deviation Fitness: 18.092605
+Generation 26: Best Fitness: 93.132142, Mean Fitness: 79.829060, Standard Deviation Fitness: 20.861393
+Generation 27: Best Fitness: 93.876036, Mean Fitness: 79.016826, Standard Deviation Fitness: 20.523285
+Generation 28: Best Fitness: 93.202788, Mean Fitness: 77.392890, Standard Deviation Fitness: 23.972849
+Generation 29: Best Fitness: 93.002788, Mean Fitness: 78.870629, Standard Deviation Fitness: 21.846849
+Generation 30: Best Fitness: 93.018216, Mean Fitness: 78.500127, Standard Deviation Fitness: 25.616695
