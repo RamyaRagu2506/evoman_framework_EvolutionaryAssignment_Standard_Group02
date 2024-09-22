@@ -14,6 +14,8 @@ import numpy as np
 import os
 import neat
 import pickle
+import matplotlib.pyplot as plt
+
 
 # Runs simulation
 def simulation(env, controller):
@@ -72,8 +74,27 @@ def save_results(experiment_name, generation, best_fitness, mean_fitness, std_fi
                        f"Mean Fitness: {mean_fitness:.6f}, Std Fitness: {std_fitness:.6f}\n")
     print(f"Results saved for generation {generation + 1}.", flush=True)
 
+def plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_name):
+    plt.figure(figsize=(10, 6))
+    plt.plot(generations, best_fitness_list, label='Best Fitness', color='b', marker='o')
+    plt.plot(generations, mean_fitness_list, label='Mean Fitness', color='g', marker='x')
+    plt.xlabel('Generations')
+    plt.ylabel('Fitness')
+    plt.title('Fitness over Generations - NEAT Algorithm')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot to the experiment directory
+    plt.savefig(f'{experiment_name}/fitness_over_generations.png')
+    plt.show()
+
+
 # Main NEAT evolution function
 def run_neat_evolution(population, generations, config, env, experiment_name):
+    # Lists to store fitness values for plotting
+    best_fitness_list = []
+    mean_fitness_list = []
+
     for generation in range(generations):
         print(f"\n========== Running Generation {generation + 1} ==========", flush=True)
         
@@ -95,6 +116,10 @@ def run_neat_evolution(population, generations, config, env, experiment_name):
             print(f"  - Mean Fitness: {mean_fitness:.6f}", flush=True)
             print(f"  - Std Deviation: {std_fitness:.6f}", flush=True)
 
+            # Save fitness values for plotting
+            best_fitness_list.append(best_fitness)
+            mean_fitness_list.append(mean_fitness)
+
             # Save the generation results
             save_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness)
 
@@ -103,8 +128,10 @@ def run_neat_evolution(population, generations, config, env, experiment_name):
 
             # Save the population state
             save_population_state(population, experiment_name)
-
-    return best_genome
+            
+    # Return the best genome and fitness data for plotting
+    generations = list(range(1, generations + 1))
+    return best_genome, best_fitness_list, mean_fitness_list, generations
 
 
 def main():
@@ -121,13 +148,13 @@ def main():
     # Initialize the environment
     n_hidden_neurons = 10
     env = Environment(experiment_name=experiment_name,
-                      enemies=[7],  # Adjust the enemy as needed
+                      enemies=[5],  # Adjust the enemy as needed
                       playermode="ai",
                       player_controller=player_controller(n_hidden_neurons),
                       enemymode="static",
                       level=2,
                       speed="fastest",
-                      visuals=True)
+                      visuals=False)
 
     print("Environment setup complete.", flush=True)
 
@@ -143,10 +170,14 @@ def main():
         ini_g = pop_neat.generation
 
     # Run NEAT evolution
-    winner_neat = run_neat_evolution(pop_neat, gens - ini_g, config_neat, env, experiment_name)
+    best_genome, best_fitness_list, mean_fitness_list, generations = run_neat_evolution(
+        pop_neat, gens - ini_g, config_neat, env, experiment_name)
 
     # Output the final best genome
-    print(f"\nBest genome after {gens} generations: {winner_neat}", flush=True)
+    print(f"\nBest genome after {gens} generations: {best_genome}", flush=True)
+
+    # Plot the fitness over generations
+    plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_name)
 
 if __name__ == '__main__':
     main()

@@ -7,7 +7,9 @@ import random
 import os
 from memetic_controller import player_controller
 from evoman.environment import Environment
-
+import multiprocessing as mp
+import matplotlib.pyplot as plt
+import pickle
 
 # Global search (GA): Initialize population
 def initialize_population(npop, n_vars, dom_l, dom_u):
@@ -51,7 +53,7 @@ def mutation(offspring, mutation_rate, dom_l, dom_u):
 
 
 # Local Search: Simple Hill Climbing
-def hill_climb(env, individual, mutation_rate, n_iterations=10):
+def hill_climb(env, individual, mutation_rate, n_iterations=5):
     best_fitness = env.play(pcont=individual)[0]
     best_individual = individual.copy()
     for _ in range(n_iterations):
@@ -63,11 +65,25 @@ def hill_climb(env, individual, mutation_rate, n_iterations=10):
     return best_individual, best_fitness
 
 
+def plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_name):
+    plt.figure(figsize=(10, 6))
+    plt.plot(generations, best_fitness_list, label='Best Fitness', color='b', marker='o')
+    plt.plot(generations, mean_fitness_list, label='Mean Fitness', color='g', marker='x')
+    plt.xlabel('Generations')
+    plt.ylabel('Fitness')
+    plt.title('Fitness over Generations - Memetic Algorithm')
+    plt.legend()
+    plt.grid(True)
+    
+    # Save the plot as an image
+    plt.savefig(f'{experiment_name}/fitness_over_generations.png')
+    plt.show()
+
 # Function to save results to a file
-def save_generation_results(experiment_name, generation, best_fitness, mean_fitness):
+def save_generation_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness):
     results_path = os.path.join(experiment_name, 'results_memetic.txt')
     with open(results_path, 'a') as file_aux:
-        file_aux.write(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}\n")
+        file_aux.write(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Standard Deviation Fitness: {std_fitness:.6f}\n")
 
 
 # Save the final best solution and fitness
@@ -79,16 +95,22 @@ def save_final_solution(experiment_name, best_solution, best_fitness):
 
 
 # Memetic Algorithm: Global search (GA) + local search (hill climbing)
-def memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate, experiment_name):
+def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, dom_l, dom_u, mutation_rate, experiment_name):
     print(f"Starting Memetic Algorithm with {npop} individuals and {gens} generations...\n")
-    pop = initialize_population(npop, n_vars, dom_l, dom_u)
-    fit_pop = evaluate_population(env, pop)
+    
+    best_fitness_list = []
+    mean_fitness_list = []
 
-    for generation in range(gens):
+    for generation in range(ini_g, gens):
         print(f"\n========== Generation {generation + 1}/{gens} ==========")
         print(f"Best fitness in current generation: {np.max(fit_pop):.6f}")
-        print(f"Mean fitness in current generation: {np.mean(fit_pop):.6f}\n")
-        print(f"Standard Deviation fitness in current generation: {np.std(fit_pop):.6f}")
+        print(f"Mean fitness in current generation: {np.mean(fit_pop):.6f}")
+        print(f"Standard Deviation fitness in current generation: {np.std(fit_pop):.6f}\n")
+
+        # Store fitness values for plotting
+        best_fitness_list.append(np.max(fit_pop))
+        mean_fitness_list.append(np.mean(fit_pop))
+
         # Selection
         print("Performing selection...")
         selected_pop = selection(pop, fit_pop)
@@ -119,7 +141,7 @@ def memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate, expe
         best_fitness = np.max(fit_pop)
         mean_fitness = np.mean(fit_pop)
         std_fitness = np.std(fit_pop)
-        save_generation_results(experiment_name, generation, best_fitness, mean_fitness)
+        save_generation_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness)
 
         print(f"\nSummary of Generation {generation + 1}:")
         print(f"  - Best Fitness: {best_fitness:.6f}")
@@ -128,8 +150,7 @@ def memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate, expe
         print(f"======================================")
 
     best_individual_idx = np.argmax(fit_pop)
-    return pop[best_individual_idx], fit_pop[best_individual_idx]
-
+    return pop[best_individual_idx], fit_pop[best_individual_idx], best_fitness_list, mean_fitness_list
 
 # Main function to run the memetic algorithm
 def main():
@@ -152,15 +173,29 @@ def main():
                       enemymode="static",
                       level=2,
                       speed="fastest",
-                      visuals=True)
+                      visuals=False)
 
     n_vars = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
 
     print(f"Environment setup with {n_vars} variables per individual.")
 
+    # Check if previous evolution exists, else start new evolution
+    population_file = os.path.join(experiment_name, 'memetic_population.pkl')
+    if os.path.exists(population_file):
+        # Continue evolution
+        print("\nCONTINUING EVOLUTION\n")
+        with open(population_file, 'rb') as f:
+            pop, fit_pop, ini_g = pickle.load(f)
+    else:
+        # New evolution
+        print("\nNEW EVOLUTION\n")
+        pop = initialize_population(npop, n_vars, dom_l, dom_u)
+        fit_pop = evaluate_population(env, pop)
+        ini_g = 0
+
     # Run the Memetic Algorithm
     print("\nRunning the Memetic Algorithm...")
-    best_solution, best_fitness = memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate, experiment_name)
+    best_solution, best_fitness, best_fitness_list, mean_fitness_list = memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, dom_l, dom_u, mutation_rate, experiment_name)
 
     # Output final results
     print(f"\nBest solution found after {gens} generations:\n{best_solution}")
@@ -168,6 +203,14 @@ def main():
 
     # Save the final best solution and its fitness
     save_final_solution(experiment_name, best_solution, best_fitness)
+
+    # Save the population state for future continuation
+    with open(population_file, 'wb') as f:
+        pickle.dump((pop, fit_pop, gens), f)
+
+    # Plot the fitness over generations
+    generations = list(range(ini_g + 1, gens + 1))
+    plot_fitness(generations, best_fitness_list, mean_fitness_list, experiment_name)
 
 
 if __name__ == "__main__":
