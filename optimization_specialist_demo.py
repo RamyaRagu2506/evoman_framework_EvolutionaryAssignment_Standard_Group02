@@ -19,7 +19,7 @@ import glob, os
 
 
 # choose this for not using visuals and thus making experiments faster
-headless = True
+headless = False
 if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
@@ -40,7 +40,7 @@ env = Environment(experiment_name=experiment_name,
                   enemymode="static",
                   level=2,
                   speed="fastest",
-                  visuals=False)
+                  visuals=True)
 
 # default environment fitness is assumed for experiment
 

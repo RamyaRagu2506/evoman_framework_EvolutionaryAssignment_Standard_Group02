@@ -1,0 +1,18 @@
+
+Generation 0: Best Fitness: 87.46254710353533, Mean Fitness: 10.574649743408282, Std Fitness: 25.789140620153297
+
+Generation 1: Best Fitness: 87.46254710353533, Mean Fitness: 12.071101488187507, Std Fitness: 25.89942592495918
+
+Generation 2: Best Fitness: 89.07289246928256, Mean Fitness: 12.805140212723451, Std Fitness: 27.65087190998997
+
+Generation 3: Best Fitness: 89.07289246928256, Mean Fitness: 12.06027116344548, Std Fitness: 27.751703673331196
+
+Generation 4: Best Fitness: 89.07289246928256, Mean Fitness: 11.528501311893326, Std Fitness: 27.34023841570218
+
+Generation 5: Best Fitness: 89.07289246928256, Mean Fitness: 12.469551509757062, Std Fitness: 28.67727567437314
+
+Generation 6: Best Fitness: 89.07289246928256, Mean Fitness: 13.082272665489581, Std Fitness: 29.6801036642533
+
+Generation 7: Best Fitness: 89.07289246928256, Mean Fitness: 13.36638399173404, Std Fitness: 30.029111646942383
+
+Generation 8: Best Fitness: 89.07289246928256, Mean Fitness: 13.189431291746057, Std Fitness: 30.150540119907635

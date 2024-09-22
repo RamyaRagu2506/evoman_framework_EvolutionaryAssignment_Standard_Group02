@@ -30,7 +30,7 @@ class player_controller(Controller):
 			self.weights1 = controller[self.n_hidden[0]:weights1_slice].reshape((n_inputs, self.n_hidden[0]))
 
 			# Outputs activation first layer.
-
+			
 
 			# Preparing the weights and biases from the controller of layer 2
 			self.bias2 = controller[weights1_slice:weights1_slice + 5].reshape(1, 5)
