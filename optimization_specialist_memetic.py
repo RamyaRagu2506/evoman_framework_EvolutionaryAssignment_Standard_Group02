@@ -168,7 +168,7 @@ def main():
     dom_l, dom_u = -1, 1
 
     # Set up environment
-    experiment_name = "memetic_optimization"
+    experiment_name = "memetic_optimization_v2_enemy2"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 

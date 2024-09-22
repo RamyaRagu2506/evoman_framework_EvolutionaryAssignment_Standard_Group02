@@ -7,7 +7,7 @@ sys.stdout.flush = lambda: None  # Disable output buffering
 # imports framework
 import sys
 from evoman.environment import Environment
-from neat_demo_controller import player_controller
+from neat_controller import player_controller
 
 # imports other libs
 import numpy as np
@@ -38,6 +38,7 @@ def eval_genomes(genomes, config, env):
 
 # Initialize NEAT population
 def initialize_neat_population(config_file):
+    # https://neat-python.readthedocs.io/en/latest/xor_example.html
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation, config_file)
     

@@ -40,7 +40,8 @@ env = Environment(experiment_name=experiment_name,
                   enemymode="static",
                   level=2,
                   speed="fastest",
-                  visuals=True)
+                  visuals=True, 
+)
 
 # default environment fitness is assumed for experiment
 
