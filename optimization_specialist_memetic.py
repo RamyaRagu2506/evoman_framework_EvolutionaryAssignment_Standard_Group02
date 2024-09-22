@@ -11,18 +11,27 @@ from evoman.environment import Environment
 
 # Global search (GA): Initialize population
 def initialize_population(npop, n_vars, dom_l, dom_u):
+    print("Initializing population...")
     return np.random.uniform(dom_l, dom_u, (npop, n_vars))
 
 
 # Evaluate fitness of the population
 def evaluate_population(env, pop):
+    print("Evaluating fitness for the population...")
     return np.array([env.play(pcont=individual)[0] for individual in pop])
 
 
 # Selection based on fitness (roulette wheel selection)
 def selection(pop, fit_pop):
+    print("Selecting individuals based on fitness...")
+    min_fitness = np.min(fit_pop)
+    if min_fitness < 0:
+        fit_pop = fit_pop - min_fitness + 1e-6  # Shift fitness values to be positive
     fit_sum = np.sum(fit_pop)
-    probs = fit_pop / fit_sum
+    if fit_sum == 0:
+        probs = np.ones(len(fit_pop)) / len(fit_pop)  # Handle zero-sum fitness
+    else:
+        probs = fit_pop / fit_sum
     selected_idx = np.random.choice(np.arange(len(pop)), size=len(pop), p=probs)
     return pop[selected_idx]
 
@@ -45,30 +54,47 @@ def mutation(offspring, mutation_rate, dom_l, dom_u):
 def hill_climb(env, individual, mutation_rate, n_iterations=10):
     best_fitness = env.play(pcont=individual)[0]
     best_individual = individual.copy()
-
     for _ in range(n_iterations):
         new_individual = mutation(individual.copy(), mutation_rate, -1, 1)
         new_fitness = env.play(pcont=new_individual)[0]
         if new_fitness > best_fitness:
             best_fitness = new_fitness
             best_individual = new_individual
-
     return best_individual, best_fitness
 
 
+# Function to save results to a file
+def save_generation_results(experiment_name, generation, best_fitness, mean_fitness):
+    results_path = os.path.join(experiment_name, 'results_memetic.txt')
+    with open(results_path, 'a') as file_aux:
+        file_aux.write(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}\n")
+
+
+# Save the final best solution and fitness
+def save_final_solution(experiment_name, best_solution, best_fitness):
+    solution_path = os.path.join(experiment_name, 'best_solution.txt')
+    with open(solution_path, 'w') as file_aux:
+        file_aux.write(f"Best Solution: {best_solution}\n")
+        file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+
+
 # Memetic Algorithm: Global search (GA) + local search (hill climbing)
-def memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate):
-    # Initialize population
+def memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate, experiment_name):
+    print(f"Starting Memetic Algorithm with {npop} individuals and {gens} generations...\n")
     pop = initialize_population(npop, n_vars, dom_l, dom_u)
     fit_pop = evaluate_population(env, pop)
 
     for generation in range(gens):
-        print(f"\nGeneration {generation + 1}")
-
+        print(f"\n========== Generation {generation + 1}/{gens} ==========")
+        print(f"Best fitness in current generation: {np.max(fit_pop):.6f}")
+        print(f"Mean fitness in current generation: {np.mean(fit_pop):.6f}\n")
+        print(f"Standard Deviation fitness in current generation: {np.std(fit_pop):.6f}")
         # Selection
+        print("Performing selection...")
         selected_pop = selection(pop, fit_pop)
 
         # Create new population with crossover and mutation
+        print("Generating offspring with crossover and mutation...")
         offspring = []
         for i in range(0, npop, 2):
             parent1, parent2 = selected_pop[i], selected_pop[i + 1]
@@ -80,18 +106,26 @@ def memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate):
         offspring = np.array(offspring)
 
         # Local search (hill climbing) applied to offspring
+        print("Refining offspring with local search (hill climbing)...")
         refined_offspring = []
         for individual in offspring:
-            refined_individual, _ = hill_climb(env, individual, mutation_rate)
+            refined_individual, refined_fitness = hill_climb(env, individual, mutation_rate)
             refined_offspring.append(refined_individual)
 
         pop = np.array(refined_offspring)
         fit_pop = evaluate_population(env, pop)
 
-        # Log results
+        # Log results for the generation
         best_fitness = np.max(fit_pop)
         mean_fitness = np.mean(fit_pop)
-        print(f"Best Fitness: {best_fitness}, Mean Fitness: {mean_fitness}")
+        std_fitness = np.std(fit_pop)
+        save_generation_results(experiment_name, generation, best_fitness, mean_fitness)
+
+        print(f"\nSummary of Generation {generation + 1}:")
+        print(f"  - Best Fitness: {best_fitness:.6f}")
+        print(f"  - Mean Fitness: {mean_fitness:.6f}")
+        print(f"  - Standard Deviation Fitness : {std_fitness:.6f}")
+        print(f"======================================")
 
     best_individual_idx = np.argmax(fit_pop)
     return pop[best_individual_idx], fit_pop[best_individual_idx]
@@ -122,10 +156,18 @@ def main():
 
     n_vars = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
 
+    print(f"Environment setup with {n_vars} variables per individual.")
+
     # Run the Memetic Algorithm
-    best_solution, best_fitness = memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate)
-    print(f"Best solution found: {best_solution}")
+    print("\nRunning the Memetic Algorithm...")
+    best_solution, best_fitness = memetic_algorithm(env, npop, gens, n_vars, dom_l, dom_u, mutation_rate, experiment_name)
+
+    # Output final results
+    print(f"\nBest solution found after {gens} generations:\n{best_solution}")
     print(f"Best fitness achieved: {best_fitness}")
+
+    # Save the final best solution and its fitness
+    save_final_solution(experiment_name, best_solution, best_fitness)
 
 
 if __name__ == "__main__":
