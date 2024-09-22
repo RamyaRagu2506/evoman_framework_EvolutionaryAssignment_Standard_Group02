@@ -13,10 +13,11 @@ import argparse
 import numpy as np
 import time
 from joblib import Parallel, delayed
+from time import sleep
 
 
 # Disable the Pygame window
-os.environ["SDL_VIDEODRIVER"] = "dummy"
+# os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 # EvoMan Framework Imports
 from evoman.environment import Environment
@@ -24,12 +25,12 @@ from demo_controller import player_controller
 
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
-DEFAULT_POP_SIZE = 100
+DEFAULT_POP_SIZE = 200
 DEFAULT_GENS = 100
 DEFAULT_ENEMY = 8
 DEFAULT_TAU = 1 / np.sqrt(DEFAULT_POP_SIZE)
 DEFAULT_ALPHA = 0.5
-
+REPLACEMENT_FACTOR = 4 # 1/REPLACEMENT_FACTOR of the population will be replaced with random solutions (doomsday)
 
 # Argument Parsing
 def get_args():
@@ -80,6 +81,13 @@ def run_game_in_worker(experiment_name, controller, ind):
     env = setup_environment(experiment_name, DEFAULT_ENEMY, controller)
     return simulation(env, ind)
 
+def init_population(pop_size, env, n_vars):
+    pop = np.random.uniform(low=-1, high=1, size=(pop_size, n_vars))
+    step_sizes = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
+    fit_pop = evaluate_fitnesses(env, pop)
+    print(f"INITIAL POPULATION: Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
+    print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
+    return pop, step_sizes, fit_pop
 
 # Parent selection methods
 def select_parents_tournament(pop, fit_pop, tournament_size=10):
@@ -122,11 +130,21 @@ def survivor_selection(pop, fit_pop, step_sizes, pop_size):
     step_sizes = step_sizes[elite_idx]
     return pop, step_sizes
 
-def init_population(pop_size, env, n_vars):
-    pop = np.random.uniform(low=-1, high=1, size=(pop_size, n_vars))
-    step_sizes = np.random.uniform(low=0.1, high=0.2, size=(pop_size, n_vars))
-    fit_pop = evaluate_fitnesses(env, pop)
-    return pop, step_sizes, fit_pop
+def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring,offspring_step_size, pop_size): # plus strategy
+    parents_and_offspring = np.concatenate((pop, offspring), axis=0)
+    parents_and_offspring_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
+    parents_and_offspring_fitnesses = np.concatenate((fit_pop, fit_offspring), axis=0)
+    elite_idx = np.argsort(parents_and_offspring_fitnesses)[-pop_size:]
+    pop = parents_and_offspring[elite_idx]
+    step_sizes = parents_and_offspring_step_sizes[elite_idx]
+    return pop, step_sizes
+
+def doomsday(pop, fit_pop, step_sizes, pop_size, replacement_factor=4): # cuts off the worst quarter of the population and adds fresh random solutions
+    replacement = int(pop_size / replacement_factor)
+    worst_idx = np.argsort(fit_pop)[:replacement]
+    pop[worst_idx] = np.random.uniform(-1, 1, size=pop[worst_idx].shape)
+    step_sizes[worst_idx] = np.random.uniform(-0.5, 0.5, size=step_sizes[worst_idx].shape)
+    return pop, step_sizes
 
 # Main genetic algorithm function
 def genetic_algorithm(env, pop_size, gens, tau):
@@ -139,25 +157,39 @@ def genetic_algorithm(env, pop_size, gens, tau):
     best_solution = pop[np.argmax(fit_pop)]
     best_fitness = np.max(fit_pop)
 
+    no_generations_without_improvement = 0
+
     for gen in range(gens):
         offspring, offspring_step_size = blend_recombination(step_sizes, pop, fit_pop, n_vars)
         offspring, offspring_step_size = mutate(offspring, offspring_step_size, tau)
         fit_offspring = evaluate_fitnesses(env, offspring)
-        pop, step_sizes = survivor_selection(offspring, fit_offspring, offspring_step_size, pop_size)
+        # pop, step_sizes = survivor_selection(offspring, fit_offspring, offspring_step_size, pop_size)
+        pop, step_sizes = survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_size, pop_size)
         fit_pop = evaluate_fitnesses(env, pop)
 
         if np.max(fit_pop) > best_fitness:
             best_solution = pop[np.argmax(fit_pop)]
             best_fitness = np.max(fit_pop)
             print(f"New best solution found at generation {gen} with fitness: {best_fitness}")
-        else: # add the best solution to the population
+        else: # HASNT IMPROVED: add the best solution to the population
             sorted_indices = np.argsort(fit_pop) # sort the population by fitness
             # replace the worst solution with the best solution
             pop[sorted_indices[0]] = best_solution
             step_sizes[sorted_indices[0]] = step_sizes[np.argmax(fit_pop)]
             fit_pop[sorted_indices[0]] = best_fitness
+            no_generations_without_improvement += 1
 
         print(f"Generation {gen} - Best Fitness: {round(max(fit_pop),6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop),6)}")
+        print("step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
+
+        if no_generations_without_improvement > 10: # if the best solution hasnt improved in 10 generations, do doomsday
+            pop, step_sizes = doomsday(pop, fit_pop, step_sizes, pop_size, replacement_factor=REPLACEMENT_FACTOR) # replace worst quarter of the population with random solutions
+            print(f"DOOMSDAY, replacing worst 1/{REPLACEMENT_FACTOR} of the population with random solutions")
+            no_generations_without_improvement = 0
+
+            print(
+                f"AFTER DOOMSDAY Generation {gen} - Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
+            print("AFTER DOOMSDAY step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
 
     return best_solution, best_fitness
 
@@ -171,11 +203,16 @@ def main():
     env = setup_environment(args.experiment_name, args.enemies, controller)
 
     if args.run_mode == 'test':
-        bsol = np.loadtxt(args.experiment_name + '/best.txt')
+        bsol = np.loadtxt(args.experiment_name + '/best.txt')  # Load the saved best solution
         print('RUNNING SAVED BEST SOLUTION')
+        # Set the speed to normal and enable visuals
         env.update_parameter('speed', 'normal')
-        evaluate_fitnesses(env, [bsol])
+        env.update_parameter("visuals", True)
+        # Run the game with the loaded best solution
+        env.play(pcont=bsol)  # Directly call env.play() to observe the gameplay
         sys.exit(0)
+    else:
+        os.environ["SDL_VIDEODRIVER"] = "dummy" # to not open the pygame window
 
     print('STARTING EVOLUTION')
     best_solution, best_fitness = genetic_algorithm(env, args.pop_size, args.gens, DEFAULT_TAU)
