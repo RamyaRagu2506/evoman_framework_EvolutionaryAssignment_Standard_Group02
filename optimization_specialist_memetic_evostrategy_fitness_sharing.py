@@ -102,9 +102,8 @@ def raw_fit_to_shared_fit(population, raw_fitnesses, sigma_share):
             summation_sh += sharing_function(population[i], ind, sigma_share)
         new_fitness = raw_fitness / summation_sh
         shared_fitnesses.append(new_fitness)
-    return shared_fitnesses
+    return np.array(shared_fitnesses)
             
-
 
 def run_game_in_worker(experiment_name, controller, ind):
     env = setup_environment(experiment_name, DEFAULT_ENEMY, controller)
@@ -186,18 +185,16 @@ def survivor_selection_elitism(pop, raw_fit_pop, step_sizes, raw_fit_offspring, 
     parents_and_offspring = np.concatenate((pop, offspring), axis=0)
     parents_and_offspring_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
     parents_and_offspring_raw_fitnesses = np.concatenate((raw_fit_pop, raw_fit_offspring), axis=0)
-    parents_and_offspring_shared_fitnesses = raw_fit_to_shared_fit(parents_and_offspring, parents_and_offspring_raw_fitnesses, sigma_share)
-    elite_idx = np.argsort(parents_and_offspring_shared_fitnesses)[-pop_size:]
-    parents_and_offspring_shared_fitnesses[elite_idx] =raw_fit_to_shared_fit(parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], sigma_share)
-    return parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], parents_and_offspring_step_sizes[elite_idx]
+     
+    # Calculate shared fitness for all individuals
+    shared_fitnesses = raw_fit_to_shared_fit(parents_and_offspring, parents_and_offspring_raw_fitnesses, sigma_share)
+    
+    # Select elite individuals based on shared fitness
+    elite_idx = np.argsort(shared_fitnesses)[-pop_size:]
+    elite_idx = elite_idx.astype(int)
+    print(f"elite_idx: {elite_idx}, type: {type(elite_idx)}, values: {elite_idx}")
+    return parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], shared_fitnesses[elite_idx],parents_and_offspring_step_sizes[elite_idx]
 
-
-# Doomsday selection
-def doomsday_selection(pop, raw_fit_pop, step_sizes, pop_size, replacement_factor=REPLACEMENT_FACTOR):
-    worst_indices = np.argsort(raw_fit_pop)[:pop_size // replacement_factor]
-    pop[worst_indices] = np.random.uniform(-1, 1, size=(len(worst_indices), pop.shape[1]))
-    step_sizes[worst_indices] = np.random.uniform(0.1, 0.5, size=(len(worst_indices), pop.shape[1]))
-    return pop, step_sizes
 
 # Plot fitness over generations and save as image
 def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name):
@@ -246,11 +243,6 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
         # Survivor selection with elitism
         pop, raw_fit_pop, shared_fit_pop, step_sizes = survivor_selection_elitism(pop, raw_fit_pop, step_sizes, raw_fit_offspring, offspring, offspring_step_sizes, npop, sigma_share)
 
-        # Occasionally apply doomsday selection - todo : change for occuring stagnation 
-        if generation % 10 == 0:
-            print("Applying Doomsday Selection...")
-            pop, step_sizes = doomsday_selection(pop, raw_fit_pop, step_sizes, npop)
-
         # Track fitness for plotting
         best_fitness = np.max(raw_fit_pop)
         mean_fitness = np.mean(raw_fit_pop)
@@ -263,10 +255,12 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
 
     return pop[np.argmax(raw_fit_pop)], np.max(raw_fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
-
-
 def main():
     # Parameters
+    # choose this for not using visuals and thus making experiments faster
+    headless = False
+    if headless:
+        os.environ["SDL_VIDEODRIVER"] = "dummy"
     npop = 100
     gens = 30
     mutation_rate = 0.1
@@ -275,7 +269,7 @@ def main():
     sigma_share = 3.255764119219941
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_fs_enemy8"
+    experiment_name = "memetic_optimization_es_fs_enemy8_v01"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
@@ -304,7 +298,7 @@ def main():
         ini_g = 0
 
     # Run the Memetic Algorithm with DE
-    print("\nRunning the Memetic Algorithm with DE...")
+    print("\nRunning the Memetic Algorithm with fitness sharing...")
     best_solution, best_fitness, best_fitness_list, mean_fitness_list, std_fitness_list = memetic_algorithm(
         env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, n_vars, mutation_rate, sigma_share, experiment_name)
 
@@ -313,7 +307,7 @@ def main():
     print(f"Best fitness achieved: {best_fitness}")
 
     # Save the final best solution and its fitness
-    save_population_state(pop, fit_pop, gens, experiment_name)
+    save_population_state(pop, raw_fit_pop, shared_fit_pop, gens, experiment_name)
 
     # Plot the fitness over generations
     generations = list(range(ini_g + 1, gens + 1))
