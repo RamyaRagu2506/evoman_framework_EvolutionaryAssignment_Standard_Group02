@@ -192,6 +192,8 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
     mean_fitness_list = []
     std_fitness_list = []
     step_sizes = np.random.uniform(0.1, 0.5, size=(npop, n_vars))
+    overall_best_fitness = None  # Initialize to track the best fitness across all generations
+    no_generations_without_improvement = 0  # Counter for stagnation
 
     for generation in range(ini_g, gens):
         print(f"\n========== Generation {generation + 1}/{gens} ==========")
@@ -213,7 +215,15 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
 
         # Survivor selection with elitism
         pop, fit_pop, step_sizes = survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_sizes, npop)
-
+        # introduce the check for no improvement in the generation
+        # Track fitness for current generation & count the number of generations without improvement 
+        current_best_fitness = np.max(fit_pop)
+        if overall_best_fitness is None or current_best_fitness > overall_best_fitness:
+            overall_best_fitness = current_best_fitness
+            no_generations_without_improvement = 0  # Reset if improvement is found
+        else:
+            no_generations_without_improvement += 1  # Increment stagnation counter if no improvement
+        # go in for doomsday if its greater than 10 
         # Occasionally apply doomsday selection - to do : change for occuring stagnation 
         if no_generations_without_improvement > 10: # if the best solution hasnt improved in 10 generations, do doomsday
             pop, step_sizes = doomsday_selection(pop, fit_pop, step_sizes, npop, replacement_factor=REPLACEMENT_FACTOR) # replace worst quarter of the population with random solutions
@@ -247,7 +257,7 @@ def main():
     dom_l, dom_u = -1, 1
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_enemy8"
+    experiment_name = "memetic_optimization_es_doomsdaywork_enemy8"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
