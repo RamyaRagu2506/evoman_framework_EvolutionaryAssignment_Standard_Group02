@@ -242,12 +242,12 @@ def main():
     dom_l, dom_u = -1, 1
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_enemy8"
+    experiment_name = "memetic_optimization_es_enemy3"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
     env = Environment(experiment_name=experiment_name,
-                      enemies=[8],
+                      enemies=[3],
                       playermode="ai",
                       player_controller=player_controller(n_hidden_neurons),
                       enemymode="static",
