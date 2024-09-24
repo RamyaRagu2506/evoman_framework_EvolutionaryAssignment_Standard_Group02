@@ -223,16 +223,16 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
             print(
                 f"AFTER DOOMSDAY Generation {generation} - Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
             print("AFTER DOOMSDAY step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
-        for generation in range(ini_g,gens):
+        
         # Track fitness for plotting
-            best_fitness = np.max(fit_pop)
-            mean_fitness = np.mean(fit_pop)
-            std_fitness = np.std(fit_pop)
-            best_fitness_list.append(best_fitness)
-            mean_fitness_list.append(mean_fitness)
-            std_fitness_list.append(std_fitness)
+        best_fitness = np.max(fit_pop)
+        mean_fitness = np.mean(fit_pop)
+        std_fitness = np.std(fit_pop)
+        best_fitness_list.append(best_fitness)
+        mean_fitness_list.append(mean_fitness)
+        std_fitness_list.append(std_fitness)
 
-            print(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Std Dev: {std_fitness:.6f}")
+        print(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Std Dev: {std_fitness:.6f}")
 
     return pop[np.argmax(fit_pop)], np.max(fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
