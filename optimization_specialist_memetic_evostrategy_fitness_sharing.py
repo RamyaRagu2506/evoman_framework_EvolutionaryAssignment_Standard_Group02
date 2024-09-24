@@ -75,6 +75,36 @@ def evaluate_fitnesses(env, population):
     )
     return fitnesses
 
+def sharing_function(ind1, ind2, sigma_share): #sigma_share should be around 3.255764119219941=10% of the maximum distance between two 265-dimensional vectors
+    # Similarity based on Euclidean distance between two individuals
+    distance = np.linalg.norm(ind1 - ind2)
+    if distance < sigma_share:
+        return 1 - (distance / sigma_share)
+    else:
+        return 0
+
+def evaluate_shared_fitnesses(env, population, sigma_share):
+    raw_fitnesses = evaluate_fitnesses(env, population)
+    shared_fitnesses = []
+    for i, raw_fitness in enumerate(raw_fitnesses):
+        summation_sh = 0
+        for j, ind in enumerate(population):
+            summation_sh += sharing_function(population[i], ind, sigma_share)
+        new_fitness = raw_fitness / summation_sh
+        shared_fitnesses.append(new_fitness)
+    return raw_fitnesses, shared_fitnesses
+
+def raw_fit_to_shared_fit(population, raw_fitnesses, sigma_share):
+    shared_fitnesses = []
+    for i, raw_fitness in enumerate(raw_fitnesses):
+        summation_sh = 0
+        for j, ind in enumerate(population):
+            summation_sh += sharing_function(population[i], ind, sigma_share)
+        new_fitness = raw_fitness / summation_sh
+        shared_fitnesses.append(new_fitness)
+    return shared_fitnesses
+            
+
 
 def run_game_in_worker(experiment_name, controller, ind):
     env = setup_environment(experiment_name, DEFAULT_ENEMY, controller)
@@ -82,47 +112,47 @@ def run_game_in_worker(experiment_name, controller, ind):
 
 
 # Initialize population
-def init_population(pop_size, env, n_vars, dom_l, dom_u):
+def init_population(pop_size, env, n_vars, dom_l, dom_u, sigma_share):
     pop = np.random.uniform(low=dom_l, high=dom_u, size=(pop_size, n_vars))
     step_sizes = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
-    fit_pop = evaluate_fitnesses(env, pop)
-    print(f"INITIAL POPULATION: Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
+    raw_fit_pop, shared_fit_pop = evaluate_shared_fitnesses(env, pop, sigma_share)
+    print(f"INITIAL POPULATION: Best Fitness: {round(max(raw_fit_pop), 6)} - Mean Fitness: {round(np.mean(raw_fit_pop), 6)} - Std Fitness: {round(np.std(raw_fit_pop), 6)}")
     print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
-    return pop, step_sizes, fit_pop
+    return pop, step_sizes, raw_fit_pop, shared_fit_pop
 
 # Save and load population state
-def save_population_state(population, fitness, generation, experiment_name):
+def save_population_state(population, raw_fitness, shared_fitness, generation, experiment_name):
     population_path = os.path.join(experiment_name, 'memetic_population_de.pkl')
     with open(population_path, 'wb') as f:
-        pickle.dump([population, fitness, generation], f)
+        pickle.dump([population, raw_fitness, shared_fitness, generation], f)
     print("Population state saved successfully.")
 
 def load_population_state(experiment_name):
     population_path = os.path.join(experiment_name, 'memetic_population_de.pkl')
     with open(population_path, 'rb') as f:
-        population, fitness, generation = pickle.load(f)
+        population, raw_fitness, shared_fitness, generation = pickle.load(f)
     print("Population state loaded successfully.")
-    return population, fitness, generation
+    return population, raw_fitness, shared_fitness,  generation
 
 # Parent selection methods
-def select_parents_tournament(pop, fit_pop, tournament_size=10):
-    fit_pop = np.array(fit_pop)
+def select_parents_tournament(pop, shared_fit_pop, tournament_size=10):
+    shared_fit_pop = np.array(shared_fit_pop)
     tournament_indices = np.random.randint(0, pop.shape[0], tournament_size)
-    tournament = fit_pop[tournament_indices]
+    tournament = shared_fit_pop[tournament_indices]
     best_parent_idx = np.argmax(tournament)
     best_parent = pop[tournament_indices[best_parent_idx]]
     return tournament_indices[best_parent_idx], best_parent
 
 
 # Recombination: Blend Recombination
-def blend_recombination(step_sizes, pop, fit_pop, n_vars, alpha=DEFAULT_ALPHA):
+def blend_recombination(step_sizes, pop, shared_fit_pop, n_vars, alpha=DEFAULT_ALPHA):
     n_offspring = np.random.randint(DEFAULT_POP_SIZE + 1, DEFAULT_POP_SIZE * 2)
     offspring = np.zeros((n_offspring, n_vars))
     offspring_step_size = np.zeros((n_offspring, n_vars))
 
     for i in range(n_offspring):
-        parent_idx1, parent1 = select_parents_tournament(pop, fit_pop)
-        parent_idx2, parent2 = select_parents_tournament(pop, fit_pop)
+        parent_idx1, parent1 = select_parents_tournament(pop, shared_fit_pop)
+        parent_idx2, parent2 = select_parents_tournament(pop, shared_fit_pop)
         difference = np.abs(parent1 - parent2)
         min_values = np.minimum(parent1, parent2) - difference * alpha
         max_values = np.maximum(parent1, parent2) + difference * alpha
@@ -152,17 +182,19 @@ def hill_climb(env, individual, mutation_rate, n_iterations=LOCAL_SEARCH_ITER):
 
 
 # Survivor selection with elitism
-def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_size, pop_size):
+def survivor_selection_elitism(pop, raw_fit_pop, step_sizes, raw_fit_offspring, offspring, offspring_step_size, pop_size, sigma_share):
     parents_and_offspring = np.concatenate((pop, offspring), axis=0)
     parents_and_offspring_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
-    parents_and_offspring_fitnesses = np.concatenate((fit_pop, fit_offspring), axis=0)
-    elite_idx = np.argsort(parents_and_offspring_fitnesses)[-pop_size:]
-    return parents_and_offspring[elite_idx], parents_and_offspring_fitnesses[elite_idx], parents_and_offspring_step_sizes[elite_idx]
+    parents_and_offspring_raw_fitnesses = np.concatenate((raw_fit_pop, raw_fit_offspring), axis=0)
+    parents_and_offspring_shared_fitnesses = raw_fit_to_shared_fit(parents_and_offspring, parents_and_offspring_raw_fitnesses, sigma_share)
+    elite_idx = np.argsort(parents_and_offspring_shared_fitnesses)[-pop_size:]
+    parents_and_offspring_shared_fitnesses[elite_idx] =raw_fit_to_shared_fit(parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], sigma_share)
+    return parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], parents_and_offspring_step_sizes[elite_idx]
 
 
 # Doomsday selection
-def doomsday_selection(pop, fit_pop, step_sizes, pop_size, replacement_factor=REPLACEMENT_FACTOR):
-    worst_indices = np.argsort(fit_pop)[:pop_size // replacement_factor]
+def doomsday_selection(pop, raw_fit_pop, step_sizes, pop_size, replacement_factor=REPLACEMENT_FACTOR):
+    worst_indices = np.argsort(raw_fit_pop)[:pop_size // replacement_factor]
     pop[worst_indices] = np.random.uniform(-1, 1, size=(len(worst_indices), pop.shape[1]))
     step_sizes[worst_indices] = np.random.uniform(0.1, 0.5, size=(len(worst_indices), pop.shape[1]))
     return pop, step_sizes
@@ -185,7 +217,7 @@ def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_
     plt.show()
 
 # Main Memetic Algorithm with Evolutionary Strategy and Hill Climbing
-def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rate, experiment_name):
+def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, n_vars, mutation_rate, sigma_share, experiment_name):
     print(f"Starting Memetic Algorithm with {npop} individuals and {gens} generations...\n")
     
     best_fitness_list = []
@@ -197,39 +229,39 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
         print(f"\n========== Generation {generation + 1}/{gens} ==========")
 
         # Recombination and Mutation
-        offspring, offspring_step_sizes = blend_recombination(step_sizes, pop, fit_pop, n_vars)
+        offspring, offspring_step_sizes = blend_recombination(step_sizes, pop, shared_fit_pop, n_vars)
         
         # Apply Gaussian mutation to offspring
         for i in range(len(offspring)):
             offspring[i], offspring_step_sizes[i] = gaussian_mutation(offspring[i], offspring_step_sizes[i], mutation_rate)
         
         # Evaluate offspring
-        fit_offspring = evaluate_fitnesses(env, offspring)
+        raw_fit_offspring = evaluate_fitnesses(env, offspring)
 
         # Apply Local Search (Hill Climbing) to offspring
         for i in range(len(offspring)):
             refined_individual, refined_fitness = hill_climb(env, offspring[i], mutation_rate)
-            offspring[i], fit_offspring[i] = refined_individual, refined_fitness
+            offspring[i], raw_fit_offspring[i] = refined_individual, refined_fitness
 
         # Survivor selection with elitism
-        pop, fit_pop, step_sizes = survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_sizes, npop)
+        pop, raw_fit_pop, shared_fit_pop, step_sizes = survivor_selection_elitism(pop, raw_fit_pop, step_sizes, raw_fit_offspring, offspring, offspring_step_sizes, npop, sigma_share)
 
-        # Occasionally apply doomsday selection - to do : change for occuring stagnation 
+        # Occasionally apply doomsday selection - todo : change for occuring stagnation 
         if generation % 10 == 0:
             print("Applying Doomsday Selection...")
-            pop, step_sizes = doomsday_selection(pop, fit_pop, step_sizes, npop)
+            pop, step_sizes = doomsday_selection(pop, raw_fit_pop, step_sizes, npop)
 
         # Track fitness for plotting
-        best_fitness = np.max(fit_pop)
-        mean_fitness = np.mean(fit_pop)
-        std_fitness = np.std(fit_pop)
+        best_fitness = np.max(raw_fit_pop)
+        mean_fitness = np.mean(raw_fit_pop)
+        std_fitness = np.std(raw_fit_pop)
         best_fitness_list.append(best_fitness)
         mean_fitness_list.append(mean_fitness)
         std_fitness_list.append(std_fitness)
 
         print(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Std Dev: {std_fitness:.6f}")
 
-    return pop[np.argmax(fit_pop)], np.max(fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
+    return pop[np.argmax(raw_fit_pop)], np.max(raw_fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
 
 
@@ -240,9 +272,10 @@ def main():
     mutation_rate = 0.1
     n_hidden_neurons = 10
     dom_l, dom_u = -1, 1
+    sigma_share = 3.255764119219941
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_enemy8"
+    experiment_name = "memetic_optimization_es_fs_enemy8"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
@@ -262,18 +295,18 @@ def main():
     if os.path.exists(experiment_name + '/memetic_population_de.pkl'):
         # Continue evolution
         print("\nCONTINUING EVOLUTION\n")
-        pop, fit_pop, ini_g = load_population_state(experiment_name)
+        pop, raw_fit_pop, ini_g = load_population_state(experiment_name)
     else:
         # New evolution
         print("\nNEW EVOLUTION\n")
-        pop, step_sizes, fit_pop = init_population(npop, env, n_vars, dom_l, dom_u)
-        fit_pop = evaluate_fitnesses(env, pop)
+        pop, step_sizes, raw_fit_pop, shared_fit_pop = init_population(npop, env, n_vars, dom_l, dom_u, sigma_share)
+        raw_fit_pop, shared_fit_pop = evaluate_shared_fitnesses(env, pop, sigma_share)
         ini_g = 0
 
     # Run the Memetic Algorithm with DE
     print("\nRunning the Memetic Algorithm with DE...")
     best_solution, best_fitness, best_fitness_list, mean_fitness_list, std_fitness_list = memetic_algorithm(
-        env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rate, experiment_name)
+        env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, n_vars, mutation_rate, sigma_share, experiment_name)
 
     # Output final results
     print(f"\nBest solution found after {gens} generations:\n{best_solution}")
