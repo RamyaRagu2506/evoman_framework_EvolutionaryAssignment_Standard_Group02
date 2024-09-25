@@ -192,7 +192,6 @@ def survivor_selection_elitism(pop, raw_fit_pop, step_sizes, raw_fit_offspring, 
     # Select elite individuals based on shared fitness
     elite_idx = np.argsort(shared_fitnesses)[-pop_size:]
     elite_idx = elite_idx.astype(int)
-    print(f"elite_idx: {elite_idx}, type: {type(elite_idx)}, values: {elite_idx}")
     return parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], shared_fitnesses[elite_idx],parents_and_offspring_step_sizes[elite_idx]
 
 
@@ -283,7 +282,7 @@ def main():
     sigma_share = 3.255764119219941
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_fs_enemy8_v01"
+    experiment_name = "memetic_optimization_es_fs_enemy3_without_dd"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 

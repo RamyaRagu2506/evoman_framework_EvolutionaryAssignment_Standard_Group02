@@ -161,13 +161,6 @@ def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offsprin
     return parents_and_offspring[elite_idx], parents_and_offspring_fitnesses[elite_idx], parents_and_offspring_step_sizes[elite_idx]
 
 
-# Doomsday selection
-def doomsday_selection(pop, fit_pop, step_sizes, pop_size, replacement_factor=REPLACEMENT_FACTOR):
-    worst_indices = np.argsort(fit_pop)[:pop_size // replacement_factor]
-    pop[worst_indices] = np.random.uniform(-1, 1, size=(len(worst_indices), pop.shape[1]))
-    step_sizes[worst_indices] = np.random.uniform(0.1, 0.5, size=(len(worst_indices), pop.shape[1]))
-    return pop, step_sizes
-
 # Plot fitness over generations and save as image
 def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name):
     plt.figure(figsize=(10, 6))
@@ -229,24 +222,6 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
 
         # Survivor selection with elitism
         pop, fit_pop, step_sizes = survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_sizes, npop)
-        # introduce the check for no improvement in the generation
-        # Track fitness for current generation & count the number of generations without improvement 
-        current_best_fitness = np.max(fit_pop)
-        if overall_best_fitness is None or current_best_fitness > overall_best_fitness:
-            overall_best_fitness = current_best_fitness
-            no_generations_without_improvement = 0  # Reset if improvement is found
-        else:
-            no_generations_without_improvement += 1  # Increment stagnation counter if no improvement
-        # go in for doomsday if its greater than 10 
-        # Occasionally apply doomsday selection - to do : change for occuring stagnation 
-        if no_generations_without_improvement > 10: # if the best solution hasnt improved in 10 generations, do doomsday
-            pop, step_sizes = doomsday_selection(pop, fit_pop, step_sizes, npop, replacement_factor=REPLACEMENT_FACTOR) # replace worst quarter of the population with random solutions
-            print(f"DOOMSDAY, replacing worst 1/{REPLACEMENT_FACTOR} of the population with random solutions")
-            no_generations_without_improvement = 0
-
-            print(
-                f"AFTER DOOMSDAY Generation {generation} - Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
-            print("AFTER DOOMSDAY step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
         
         # Track fitness for plotting
         best_fitness = np.max(fit_pop)
@@ -267,7 +242,6 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
     return pop[np.argmax(fit_pop)], np.max(fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
 
-
 def main():
     # Parameters
     npop = 100
@@ -277,7 +251,7 @@ def main():
     dom_l, dom_u = -1, 1
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_doomsdaywork_enemy3"
+    experiment_name = "memetic_optimization_es_enemy3"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
