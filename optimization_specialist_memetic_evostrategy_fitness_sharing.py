@@ -213,6 +213,19 @@ def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_
     plt.savefig(plot_path)
     plt.show()
 
+# Function to save results to a file
+def save_generation_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness):
+    results_path = os.path.join(experiment_name, 'results_memetic.txt')
+    with open(results_path, 'a') as file_aux:
+        file_aux.write(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Standard Deviation Fitness: {std_fitness:.6f}\n")
+
+# Save the final best solution and fitness
+def save_final_solution(experiment_name, best_solution, best_fitness):
+    solution_path = os.path.join(experiment_name, 'best_solution.txt')
+    with open(solution_path, 'w') as file_aux:
+        file_aux.write(f"Best Solution: {best_solution}\n")
+        file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+
 # Main Memetic Algorithm with Evolutionary Strategy and Hill Climbing
 def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, n_vars, mutation_rate, sigma_share, experiment_name):
     print(f"Starting Memetic Algorithm with {npop} individuals and {gens} generations...\n")
@@ -250,6 +263,7 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
         best_fitness_list.append(best_fitness)
         mean_fitness_list.append(mean_fitness)
         std_fitness_list.append(std_fitness)
+        save_generation_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness)
 
         print(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Std Dev: {std_fitness:.6f}")
 
