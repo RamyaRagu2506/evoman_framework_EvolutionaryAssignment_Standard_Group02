@@ -30,6 +30,7 @@ DEFAULT_TAU = 1 / np.sqrt(DEFAULT_POP_SIZE)
 DEFAULT_ALPHA = 0.5
 REPLACEMENT_FACTOR = 4  # 1/REPLACEMENT_FACTOR of the population will be replaced with random solutions (doomsday)
 LOCAL_SEARCH_ITER = 5  # Number of iterations for local hill climbing search
+DEFAULT_EPSILON = 1e-8
 
 # Argument Parsing
 def get_args():
@@ -132,9 +133,16 @@ def blend_recombination(step_sizes, pop, fit_pop, n_vars, alpha=DEFAULT_ALPHA):
 
 
 # Mutation: Gaussian mutation
-def gaussian_mutation(individual, step_size, tau=DEFAULT_TAU):
+def gaussian_mutation(individual, step_size, tau=DEFAULT_TAU,epsilon = DEFAULT_EPSILON):
+    # Mutate the step sizes (σi)
     new_step_size = step_size * np.exp(tau * np.random.randn(*step_size.shape))
+    
+    # Apply the boundary condition: ensure step sizes don't fall below epsilon
+    new_step_size[new_step_size < epsilon] = epsilon
+    
+    # Mutate the individual (xi) using the updated step sizes
     new_individual = individual + new_step_size * np.random.randn(*individual.shape)
+    
     return new_individual, new_step_size
 
 

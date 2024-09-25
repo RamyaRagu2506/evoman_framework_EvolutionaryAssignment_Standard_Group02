@@ -25,11 +25,14 @@ import pickle
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 200
 DEFAULT_GENS = 100
-DEFAULT_ENEMY = 8
-DEFAULT_TAU = 1 / np.sqrt(DEFAULT_POP_SIZE)
+DEFAULT_ENEMY = 3
+DEFAULT_VARS = 265 # total no. of weights in consideeration 
+DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor 
+DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor 
 DEFAULT_ALPHA = 0.5
 REPLACEMENT_FACTOR = 4  # 1/REPLACEMENT_FACTOR of the population will be replaced with random solutions (doomsday)
 LOCAL_SEARCH_ITER = 5  # Number of iterations for local hill climbing search
+DEFAULT_EPSILON = 1e-8
 
 # Argument Parsing
 def get_args():
@@ -161,11 +164,23 @@ def blend_recombination(step_sizes, pop, shared_fit_pop, n_vars, alpha=DEFAULT_A
 
 
 # Mutation: Gaussian mutation
-def gaussian_mutation(individual, step_size, tau=DEFAULT_TAU):
-    new_step_size = step_size * np.exp(tau * np.random.randn(*step_size.shape))
+def gaussian_mutation(individual, step_size, tau= DEFAULT_TAU, tau_prime= DEFAULT_TAU_PRIME, epsilon=1e-8):
+# Global mutation on step sizes (applies to all dimensions)
+    global_mutation = np.exp(tau * np.random.randn())
+    
+    # Local mutation on each step size (applies to each dimension independently)
+    local_mutation = tau_prime * np.random.randn(*step_size.shape)
+    
+    # Update the step sizes with both global and local mutation
+    new_step_size = step_size * global_mutation + local_mutation
+    
+    # Apply the boundary condition to prevent step sizes from becoming too small
+    new_step_size[new_step_size < epsilon] = epsilon
+    
+    # Mutate the individual (xi) using the updated step sizes
     new_individual = individual + new_step_size * np.random.randn(*individual.shape)
+    
     return new_individual, new_step_size
-
 
 # Local Search: Hill Climbing
 def hill_climb(env, individual, mutation_rate, n_iterations=LOCAL_SEARCH_ITER):
@@ -282,7 +297,7 @@ def main():
     sigma_share = 3.255764119219941
 
     # Set up environment
-    experiment_name = "memetic_optimization_es_fs_enemy3_without_dd"
+    experiment_name = "memetic_optimization_es_fs_enemy3"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
