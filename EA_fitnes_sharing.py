@@ -25,7 +25,7 @@ import pickle
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 100
 DEFAULT_GENS = 50
-DEFAULT_ENEMY = 4
+DEFAULT_ENEMY = 3
 DEFAULT_VARS = 265 # total no. of weights in consideration
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor
 DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor
@@ -366,6 +366,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, S
         os.makedirs(main_folder)
     # Loop for a maximum of 10 iterations
     for iteration_no in range(1, 11):  # Max 10 iterations
+        start_time = time.process_time()
         print(f'Running for iteration {iteration_no}')
         # Generate the experiment name
         experiment_name = f"{main_folder}/{generate_experiment_name(iteration_no, enemy_name)}"
@@ -417,6 +418,10 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, S
         generations = list(range(ini_g + 1, DEFAULT_GENS + 1))
         plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name)
         np.savetxt(experiment_name + '/best.txt', best_solution)
+
+        print("Execution time: ", time.process_time() - start_time)
+        np.savetxt(experiment_name + f'/execution_time_{iteration_no}.txt', np.array([time.process_time() - start_time]))
+
 
 if __name__ == '__main__':
     main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, SIGMA_SHARE,DEFAULT_MUTATION_RATE)

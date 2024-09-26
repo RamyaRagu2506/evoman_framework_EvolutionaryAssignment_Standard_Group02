@@ -15,6 +15,7 @@ import time
 from joblib import Parallel, delayed
 from time import sleep
 
+
 # EvoMan Framework Imports
 from evoman.environment import Environment
 from memetic_controller import player_controller
@@ -25,7 +26,7 @@ import pickle
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 100
 DEFAULT_GENS = 50
-DEFAULT_ENEMY = 4
+DEFAULT_ENEMY = 3
 DEFAULT_VARS = 265 # total no. of weights in consideration
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor
 DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor
@@ -36,6 +37,7 @@ DEFAULT_EPSILON = 1e-8
 DOM_L, DOM_U = -1, 1
 SIGMA_SHARE = 2*3.255764119219941
 DEFAULT_MUTATION_RATE = 0.1
+
 
 # Argument Parsing
 def get_args():
@@ -342,8 +344,13 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, D
     main_folder = f"es_enemy{enemy_name}"
     if not os.path.exists(main_folder):
         os.makedirs(main_folder)
-    # Loop for a maximum of 10 iterations
+
+
+# Loop for a maximum of 10 iterations
     for iteration_no in range(1, 11):  # Max 10 iterations
+        # start time
+        start_time = time.process_time()
+
         print(f'Running for iteration {iteration_no}')
         # Generate the experiment name
         experiment_name = f"{main_folder}/{generate_experiment_name(iteration_no, enemy_name)}"
@@ -396,5 +403,12 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, D
         plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name)
         np.savetxt(experiment_name + '/best.txt', best_solution)
 
+        print("Execution time: ", time.process_time() - start_time)
+        np.savetxt(experiment_name + f'/execution_time_{iteration_no}.txt', np.array([time.process_time() - start_time]))
+
+
 if __name__ == '__main__':
     main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, DEFAULT_MUTATION_RATE)
+
+
+
