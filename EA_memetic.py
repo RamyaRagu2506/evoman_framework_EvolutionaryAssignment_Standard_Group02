@@ -336,7 +336,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, D
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
     # Set up environment
-    # Assuming enemy_name is already defined
+    # Assuming enemy_name i_s already defined
     enemy_name = DEFAULT_ENEMY  
     # Create a main folder for the enemy
     main_folder = f"es_enemy{enemy_name}"
