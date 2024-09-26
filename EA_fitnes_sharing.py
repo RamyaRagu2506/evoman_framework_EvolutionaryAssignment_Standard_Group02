@@ -23,18 +23,19 @@ import pickle
 
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
-DEFAULT_POP_SIZE = 30
-DEFAULT_GENS = 3
+DEFAULT_POP_SIZE = 100
+DEFAULT_GENS = 50
 DEFAULT_ENEMY = 4
-DEFAULT_VARS = 265 # total no. of weights in consideration 
-DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor 
-DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor 
+DEFAULT_VARS = 265 # total no. of weights in consideration
+DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor
+DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor
 DEFAULT_ALPHA = 0.5
+REPLACEMENT_FACTOR = 4  # 1/REPLACEMENT_FACTOR of the population will be replaced with random solutions (doomsday)
 LOCAL_SEARCH_ITER = 5  # Number of iterations for local hill climbing search
 DEFAULT_EPSILON = 1e-8
 DOM_L, DOM_U = -1, 1
-SIGMA_SHARE = 3.255764119219941
-DEFAULT_MUTATION_RATE = 0.1 
+SIGMA_SHARE = 2*3.255764119219941
+DEFAULT_MUTATION_RATE = 0.1
 
 
 # Argument Parsing
@@ -260,7 +261,7 @@ def calculate_genotypic_diversity(population, fitness_values):
     return total_distance / num_pairs if num_pairs > 0 else 0
 
 
-def plot_genotypic_diversity(diversity_per_generation, generations):
+def plot_genotypic_diversity(diversity_per_generation, generations, experiment_name):
     """
     Plot the genotypic diversity across generations.
 
@@ -274,6 +275,11 @@ def plot_genotypic_diversity(diversity_per_generation, generations):
     plt.title("Genotypic Diversity Over Generations")
     plt.grid(True)
     plt.legend()
+
+    # Save the plot to the experiment directory
+    plot_path = os.path.join(experiment_name, 'diversity_over_generations.png')
+    plt.savefig(plot_path)
+    plt.show()
 
 # Save the final best solution and fitness
 def save_final_solution(experiment_name, best_solution, best_fitness):
@@ -331,7 +337,7 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
 
         print(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Std Dev: {std_fitness:.6f}, Diversity: {genotypic_diversity:.6f}")
 
-    plot_genotypic_diversity(diversity_per_generation, list(range(ini_g + 1, gens + 1)))
+    plot_genotypic_diversity(diversity_per_generation, list(range(ini_g + 1, gens + 1)), experiment_name)
 
     return pop[np.argmax(raw_fit_pop)], np.max(raw_fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
@@ -372,7 +378,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, S
         print(f"Running experiment: {experiment_name}")
 
         env = Environment(experiment_name=experiment_name,
-                      enemies=DEFAULT_ENEMY,
+                      enemies=[DEFAULT_ENEMY],
                       playermode="ai",
                       player_controller=player_controller(DEFAULT_HIDDEN_NEURONS),
                       enemymode="static",
@@ -410,7 +416,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, S
         # Plot the fitness over generations
         generations = list(range(ini_g + 1, DEFAULT_GENS + 1))
         plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name)
-        xt(experiment_name + '/best.txt', best_solution)
+        np.savetxt(experiment_name + '/best.txt', best_solution)
 
 if __name__ == '__main__':
     main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, SIGMA_SHARE,DEFAULT_MUTATION_RATE)

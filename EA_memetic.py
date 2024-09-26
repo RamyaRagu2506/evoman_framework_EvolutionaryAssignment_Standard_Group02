@@ -343,7 +343,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, D
     if not os.path.exists(main_folder):
         os.makedirs(main_folder)
     # Loop for a maximum of 10 iterations
-    for iteration_no in range(1, 1):  # Max 10 iterations
+    for iteration_no in range(1, 11):  # Max 10 iterations
         print(f'Running for iteration {iteration_no}')
         # Generate the experiment name
         experiment_name = f"{main_folder}/{generate_experiment_name(iteration_no, enemy_name)}"
