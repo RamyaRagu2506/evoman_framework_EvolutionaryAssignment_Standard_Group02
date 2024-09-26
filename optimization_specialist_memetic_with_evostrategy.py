@@ -259,6 +259,7 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
 
 def main():
     # Parameters
+    headless = True
     npop = 100
     gens = 30
     mutation_rate = 0.1

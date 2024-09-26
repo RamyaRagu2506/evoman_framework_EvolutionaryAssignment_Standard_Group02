@@ -285,9 +285,7 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
 def main():
     # Parameters
     # choose this for not using visuals and thus making experiments faster
-    headless = False
-    if headless:
-        os.environ["SDL_VIDEODRIVER"] = "dummy"
+    headless = True
     npop = 100
     gens = 30
     mutation_rate = 0.1
