@@ -30,7 +30,6 @@ DEFAULT_VARS = 265 # total no. of weights in consideration
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor 
 DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor 
 DEFAULT_ALPHA = 0.5
-REPLACEMENT_FACTOR = 4  # 1/REPLACEMENT_FACTOR of the population will be replaced with random solutions (doomsday)
 LOCAL_SEARCH_ITER = 5  # Number of iterations for local hill climbing search
 DEFAULT_EPSILON = 1e-8 # prevent the step size in mutation to shrink 
 
