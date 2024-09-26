@@ -1,5 +1,0 @@
-
-
-PARAMETER CHANGE: speed = normal
-
-PARAMETER CHANGE: visuals = True

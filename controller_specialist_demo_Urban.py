@@ -16,6 +16,7 @@ from joblib import Parallel, delayed
 from time import sleep
 
 
+
 # Disable the Pygame window
 # os.environ["SDL_VIDEODRIVER"] = "dummy"
 
@@ -27,7 +28,7 @@ from demo_controller import player_controller
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 200
 DEFAULT_GENS = 100
-DEFAULT_ENEMY = 8
+DEFAULT_ENEMY = 4
 DEFAULT_TAU = 1 / np.sqrt(DEFAULT_POP_SIZE)
 DEFAULT_ALPHA = 0.5
 REPLACEMENT_FACTOR = 4 # 1/REPLACEMENT_FACTOR of the population will be replaced with random solutions (doomsday)
@@ -65,7 +66,8 @@ def setup_environment(experiment_name, enemies, controller):
         speed="fastest",
         enemymode="static",
         level=2,
-        visuals=False
+        visuals=False,
+        randomini="yes",
     )
 
 
@@ -83,7 +85,7 @@ def run_game_in_worker(experiment_name, controller, ind):
 
 def init_population(pop_size, env, n_vars):
     pop = np.random.uniform(low=-1, high=1, size=(pop_size, n_vars))
-    step_sizes = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
+    step_sizes = np.random.uniform(low=-0.2, high=0.2, size=(pop_size, n_vars))
     fit_pop = evaluate_fitnesses(env, pop)
     print(f"INITIAL POPULATION: Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
     print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
@@ -112,7 +114,7 @@ def blend_recombination(step_sizes, pop, fit_pop, n_vars, alpha=DEFAULT_ALPHA):
         min_values = np.minimum(parent1, parent2) - differece * alpha
         max_values = np.maximum(parent1, parent2) + differece * alpha
         offspring[i] = np.random.uniform(min_values, max_values)
-        offspring_step_size[i] = np.mean(np.stack((step_sizes[parent_idx1], step_sizes[parent_idx2])), axis=0)
+        offspring_step_size[i] = np.mean(np.stack((step_sizes[parent_idx1], step_sizes[parent_idx2])), axis=0) # not sure if this is the right way to do it
     return offspring, offspring_step_size
 
 
@@ -139,7 +141,7 @@ def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offsprin
     step_sizes = parents_and_offspring_step_sizes[elite_idx]
     return pop, step_sizes
 
-def doomsday(pop, fit_pop, step_sizes, pop_size, replacement_factor=4): # cuts off the worst quarter of the population and adds fresh random solutions
+def doomsday(pop, fit_pop, step_sizes, pop_size, replacement_factor=REPLACEMENT_FACTOR): # cuts off the worst quarter of the population and adds fresh random solutions
     replacement = int(pop_size / replacement_factor)
     worst_idx = np.argsort(fit_pop)[:replacement]
     pop[worst_idx] = np.random.uniform(-1, 1, size=pop[worst_idx].shape)
@@ -192,7 +194,6 @@ def genetic_algorithm(env, pop_size, gens, tau):
             print("AFTER DOOMSDAY step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
 
     return best_solution, best_fitness
-
 
 # Main function
 def main():
