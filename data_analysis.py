@@ -68,11 +68,17 @@ def process_results_extended(base_dir, enemy, iterations=10, generations=50):
     mean_fitness_data = []
     std_fitness_data = []
 
+    # check if base dir contains es or fs
+    if 'fs' in base_dir:
+        base = "fs"
+    elif 'es' in base_dir:
+        base = "es"
+
     # Loop over the iterations
     for i in range(1, iterations + 1):
         # Paths for diversity and fitness results
-        diversity_file = os.path.join(base_dir, f'fs_{i}_enemy{enemy}', 'diversity_results.txt')
-        fitness_file = os.path.join(base_dir, f'fs_{i}_enemy{enemy}', 'fitness_results.txt')
+        diversity_file = os.path.join(base_dir, f'{base}_{i}_enemy{enemy}', 'diversity_results.txt')
+        fitness_file = os.path.join(base_dir, f'{base}_{i}_enemy{enemy}', 'fitness_results.txt')
 
         # Extract diversity results
         diversity_data.append(extract_diversity(diversity_file))
@@ -90,13 +96,6 @@ def process_results_extended(base_dir, enemy, iterations=10, generations=50):
     std_fitness_df = pd.DataFrame(std_fitness_data)
 
     return diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df
-
-# Example usage:
-diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df = process_results_extended(base_dir='fs_enemy3', enemy=3, iterations=10, generations=50)
-print(diversity_df)
-print(best_fitness_df)
-print(mean_fitness_df)
-print(std_fitness_df)
 
 
 
@@ -183,6 +182,13 @@ def plot_diversity_results(diversity_df, enemy, algorithm):
     # Show the plot
     plt.show()
 
-# Example usage:
-plot_fitness_results(best_fitness_df, mean_fitness_df, enemy=3, algorithm='With FS')
-plot_diversity_results(diversity_df, enemy=3, algorithm='With FS')
+
+
+diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df = process_results_extended(base_dir='es_enemy3', enemy=3, iterations=10, generations=50)
+print(diversity_df)
+print(best_fitness_df)
+print(mean_fitness_df)
+print(std_fitness_df)
+
+plot_fitness_results(best_fitness_df, mean_fitness_df, enemy=3, algorithm='Without FS')
+plot_diversity_results(diversity_df, enemy=3, algorithm='Without FS')
