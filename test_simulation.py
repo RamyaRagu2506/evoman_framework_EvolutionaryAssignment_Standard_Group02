@@ -26,7 +26,7 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     - n_hidden_neurons (int): Number of hidden neurons in the player's controller.
     
     Returns:
-    - tuple: Fitness, player life, enemy life, time.
+    - tuple: Fitness, player life, enemy life, time, individual_gain.
     """
     # Set up the EvoMan environment for enemy 4
     env = Environment(
@@ -41,11 +41,13 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     
     # Run the simulation with the given weights
     f, p, e, t = env.play(pcont=weights)
+
+    individual_gain = p - e  # player energy - enemy energy
     
     # Return the results of the fight
-    return f, p, e, t
+    return f, p, e, t, individual_gain
 
-def simulate_multiple_times(weights_path, output_dir, enemy=4, n_hidden_neurons=10, n_runs=5):
+def simulate_multiple_times_best(weights_path, output_dir, enemy=4, n_hidden_neurons=10, n_runs=5):
     """
     Simulates a fight against the specified enemy multiple times using the weights in the provided file,
     and stores the results in an Excel file in the specified output directory.
@@ -67,7 +69,7 @@ def simulate_multiple_times(weights_path, output_dir, enemy=4, n_hidden_neurons=
 
     # Run the simulation for n_runs times
     for run in range(n_runs):
-        fitness, player_life, enemy_life, time = simulate_enemy_fight(weights, enemy, n_hidden_neurons)
+        fitness, player_life, enemy_life, time, individual_gain = simulate_enemy_fight(weights, enemy, n_hidden_neurons)
         
         # Store the results
         results.append({
@@ -75,9 +77,10 @@ def simulate_multiple_times(weights_path, output_dir, enemy=4, n_hidden_neurons=
             'Fitness': fitness,
             'Player_Life': player_life,
             'Enemy_Life': enemy_life,
-            'Time': time
+            'Time': time,
+            'Individual_Gain': individual_gain
         })
-        print(f"Run {run + 1} - Fitness: {fitness}, Player Life: {player_life}, Enemy Life: {enemy_life}, Time: {time}")
+        print(f"Run {run + 1} - Fitness: {fitness}, Player Life: {player_life}, Enemy Life: {enemy_life}, Time: {time}, Individual Gain: {individual_gain}")
 
     # Convert the results to a DataFrame
     results_df = pd.DataFrame(results)
@@ -87,7 +90,7 @@ def simulate_multiple_times(weights_path, output_dir, enemy=4, n_hidden_neurons=
         os.makedirs(output_dir)
 
     # Save the results to an Excel file in the test folder
-    excel_file_path = os.path.join(output_dir, 'fs_enemy_4.xlsx')
+    excel_file_path = os.path.join(output_dir, 'es_enemy_4.xlsx')
     results_df.to_excel(excel_file_path, index=False)
 
     print(f"Results saved to {excel_file_path}")
@@ -95,10 +98,7 @@ def simulate_multiple_times(weights_path, output_dir, enemy=4, n_hidden_neurons=
     return results_df
 
 # Example usage:
-best_individual_path = 'fs_enemy4/best_individual.txt'  # Replace with actual path to the best_individual.txt file
+best_individual_path = 'es_enemy4/best_individual.txt'  # Replace with actual path to the best_individual.txt file
 output_directory = 'test'  # Replace with actual path to the test folder
-simulation_results = simulate_multiple_times(best_individual_path, output_dir=output_directory, enemy=4, n_hidden_neurons=10, n_runs=5)
+simulation_results = simulate_multiple_times_best(best_individual_path, output_dir=output_directory, enemy=4, n_hidden_neurons=10, n_runs=5)
 
-# Output all simulation results
-for result in simulation_results:
-    print(result)
