@@ -41,9 +41,11 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     
     # Run the simulation with the given weights
     f, p, e, t = env.play(pcont=weights)
+
+    individual_gain = p - e #player energy - enemey energy 
     
     # Return the results of the fight
-    return f, p, e, t
+    return f, p, e, t,individual_gain
 
 def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
     """
@@ -58,6 +60,8 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
     - pd.DataFrame: DataFrame with simulation results.
     """
     results = []
+    best_individual_weights = None
+    max_individual_gain = float('-inf')  # Initialize the maximum gain as negative infinity
 
     # Loop over all subdirectories (e.g., es_1_enemy4, es_2_enemy4, etc.)
     for i in range(1, 11):  # Assuming there are 10 subfolders
@@ -70,7 +74,7 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
             best_weights = load_weights(best_weights_path)
 
             # Run the simulation
-            fitness, player_life, enemy_life, time = simulate_enemy_fight(best_weights, enemy, n_hidden_neurons)
+            fitness, player_life, enemy_life, time, individual_gain = simulate_enemy_fight(best_weights, enemy, n_hidden_neurons)
 
             # Store the results in the list
             results.append({
@@ -78,8 +82,14 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
                 'Fitness': fitness,
                 'Player_Life': player_life,
                 'Enemy_Life': enemy_life,
-                'Time': time
+                'Time': time,
+                'Individual_Gain': individual_gain
             })
+
+            # Update the best individual if this individual has the highest gain
+            if individual_gain > max_individual_gain:
+                max_individual_gain = individual_gain
+                best_individual_weights = best_weights
 
     # Convert the results to a DataFrame
     results_df = pd.DataFrame(results)
@@ -87,6 +97,12 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
     # Save the results to a CSV file in the base directory
     results_file = os.path.join(base_dir, 'simulation_results_es.xls')
     results_df.to_csv(results_file, index=False)
+
+    # Save the weights of the individual with the maximum gain
+    if best_individual_weights is not None:
+        best_individual_file = os.path.join(base_dir, 'best_individual.txt')
+        np.savetxt(best_individual_file, best_individual_weights)
+        print(f"Best individual weights saved to {best_individual_file}")
 
     return results_df
 
