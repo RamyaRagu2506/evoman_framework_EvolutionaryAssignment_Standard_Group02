@@ -99,23 +99,31 @@ def process_results_extended(base_dir, enemy, iterations=10, generations=50):
 
 
 
-def plot_fitness_results(best_fitness_df, mean_fitness_df, enemy, algorithm):
+
+def plot_fitness_results(best_fitness_df_with, mean_fitness_df_with, best_fitness_df_without, mean_fitness_df_without, enemy):
     """
-    Plots the mean of the best and mean fitness across generations, along with standard deviations.
-    The mean is plotted as a dashed line, and the best is plotted as a solid line.
+    Plots the mean of the best and mean fitness across generations, along with standard deviations,
+    for both EA with fitness sharing and EA without fitness sharing.
 
     Args:
-    - best_fitness_df (pd.DataFrame): DataFrame containing best fitness results (n_iterations x generations).
-    - mean_fitness_df (pd.DataFrame): DataFrame containing mean fitness results (n_iterations x generations).
+    - best_fitness_df_with (pd.DataFrame): Best fitness results (n_iterations x generations) for EA with fitness sharing.
+    - mean_fitness_df_with (pd.DataFrame): Mean fitness results (n_iterations x generations) for EA with fitness sharing.
+    - best_fitness_df_without (pd.DataFrame): Best fitness results (n_iterations x generations) for EA without fitness sharing.
+    - mean_fitness_df_without (pd.DataFrame): Mean fitness results (n_iterations x generations) for EA without fitness sharing.
     """
-    generations = best_fitness_df.shape[1]
+    generations = best_fitness_df_with.shape[1]
 
-    # Calculate the mean and standard deviation across the iterations (axis=0 means along columns)
-    best_fitness_mean = best_fitness_df.mean(axis=0)
-    best_fitness_std = best_fitness_df.std(axis=0)
+    # Calculate the mean and standard deviation for EA with fitness sharing
+    best_fitness_mean_with = best_fitness_df_with.mean(axis=0)
+    best_fitness_std_with = best_fitness_df_with.std(axis=0)
+    mean_fitness_mean_with = mean_fitness_df_with.mean(axis=0)
+    mean_fitness_std_with = mean_fitness_df_with.std(axis=0)
 
-    mean_fitness_mean = mean_fitness_df.mean(axis=0)
-    mean_fitness_std = mean_fitness_df.std(axis=0)
+    # Calculate the mean and standard deviation for EA without fitness sharing
+    best_fitness_mean_without = best_fitness_df_without.mean(axis=0)
+    best_fitness_std_without = best_fitness_df_without.std(axis=0)
+    mean_fitness_mean_without = mean_fitness_df_without.mean(axis=0)
+    mean_fitness_std_without = mean_fitness_df_without.std(axis=0)
 
     # Generate an array for generations
     gen_range = np.arange(1, generations + 1)
@@ -123,41 +131,63 @@ def plot_fitness_results(best_fitness_df, mean_fitness_df, enemy, algorithm):
     # Plotting
     plt.figure(figsize=(10, 6))
 
-    # Plot the best fitness
-    plt.plot(gen_range, best_fitness_mean, label='Best Fitness', color='blue', linestyle='-', linewidth=2)
-    plt.fill_between(gen_range, best_fitness_mean - best_fitness_std, best_fitness_mean + best_fitness_std,
+    line_width = 1
+
+    # Plot the best fitness for EA with fitness sharing
+    plt.plot(gen_range, best_fitness_mean_with, label='Best Fitness (With Sharing)', color='blue', linestyle='-', linewidth=line_width)
+    plt.fill_between(gen_range, best_fitness_mean_with - best_fitness_std_with, best_fitness_mean_with + best_fitness_std_with,
                      color='blue', alpha=0.3)
 
-    # Plot the mean fitness
-    plt.plot(gen_range, mean_fitness_mean, label='Mean Fitness', color='orange', linestyle='--', linewidth=2)
-    plt.fill_between(gen_range, mean_fitness_mean - mean_fitness_std, mean_fitness_mean + mean_fitness_std,
+    # Plot the mean fitness for EA with fitness sharing
+    plt.plot(gen_range, mean_fitness_mean_with, label='Mean Fitness (With Sharing)', color='orange', linestyle='--', linewidth=line_width)
+    plt.fill_between(gen_range, mean_fitness_mean_with - mean_fitness_std_with, mean_fitness_mean_with + mean_fitness_std_with,
                      color='orange', alpha=0.3)
+
+    # Plot the best fitness for EA without fitness sharing
+    plt.plot(gen_range, best_fitness_mean_without, label='Best Fitness (Without Sharing)', color='green', linestyle='-', linewidth=line_width)
+    plt.fill_between(gen_range, best_fitness_mean_without - best_fitness_std_without, best_fitness_mean_without + best_fitness_std_without,
+                     color='green', alpha=0.3)
+
+    # Plot the mean fitness for EA without fitness sharing
+    plt.plot(gen_range, mean_fitness_mean_without, label='Mean Fitness (Without Sharing)', color='red', linestyle='--', linewidth=line_width)
+    plt.fill_between(gen_range, mean_fitness_mean_without - mean_fitness_std_without, mean_fitness_mean_without + mean_fitness_std_without,
+                     color='red', alpha=0.3)
 
     # Add labels and title
     plt.xlabel('Generations')
     plt.ylabel('Fitness')
     plt.title('Mean and Best Fitness Over Generations with Standard Deviations')
-    plt.suptitle(f'Enemy {enemy} - {algorithm}')
+    plt.suptitle(f'Enemy {enemy}')
     plt.legend()
     plt.grid(True)
+
+    # Set x-axis limits to start where the lines start and end at the last generation
+    plt.xlim(gen_range[0], gen_range[-1])
+
     plt.tight_layout()
 
     # Show the plot
     plt.show()
 
-def plot_diversity_results(diversity_df, enemy, algorithm):
+
+def plot_diversity_results(diversity_df_with, diversity_df_without, enemy):
     """
-    Plots the mean of the best and mean fitness across generations, along with standard deviations.
-    The mean is plotted as a dashed line, and the best is plotted as a solid line.
+    Plots the mean diversity across generations, along with standard deviations,
+    for both EA with fitness sharing and EA without fitness sharing.
 
     Args:
-    - best_fitness_df (pd.DataFrame): DataFrame containing best fitness results (n_iterations x generations).
-    - mean_fitness_df (pd.DataFrame): DataFrame containing mean fitness results (n_iterations x generations).
+    - diversity_df_with (pd.DataFrame): Diversity results (n_iterations x generations) for EA with fitness sharing.
+    - diversity_df_without (pd.DataFrame): Diversity results (n_iterations x generations) for EA without fitness sharing.
     """
-    generations = diversity_df.shape[1]
+    generations = diversity_df_with.shape[1]
 
-    diversity_mean = diversity_df.mean(axis=0)
-    diversity_std = diversity_df.std(axis=0)
+    # Calculate the mean and standard deviation for EA with fitness sharing
+    diversity_mean_with = diversity_df_with.mean(axis=0)
+    diversity_std_with = diversity_df_with.std(axis=0)
+
+    # Calculate the mean and standard deviation for EA without fitness sharing
+    diversity_mean_without = diversity_df_without.mean(axis=0)
+    diversity_std_without = diversity_df_without.std(axis=0)
 
     # Generate an array for generations
     gen_range = np.arange(1, generations + 1)
@@ -165,30 +195,40 @@ def plot_diversity_results(diversity_df, enemy, algorithm):
     # Plotting
     plt.figure(figsize=(10, 6))
 
-    # Plot the best fitness
-    plt.plot(gen_range, diversity_mean, label='Diversity', color='red', linewidth=2)
-    plt.fill_between(gen_range, diversity_mean - diversity_std, diversity_mean + diversity_std,
+    line_width = 1
+
+    # Plot the diversity for EA with fitness sharing
+    plt.plot(gen_range, diversity_mean_with, label='Diversity (With Sharing)', color='blue', linewidth=line_width)
+    plt.fill_between(gen_range, diversity_mean_with - diversity_std_with, diversity_mean_with + diversity_std_with,
                      color='blue', alpha=0.3)
+
+    # Plot the diversity for EA without fitness sharing
+    plt.plot(gen_range, diversity_mean_without, label='Diversity (Without Sharing)', color='red', linewidth=line_width)
+    plt.fill_between(gen_range, diversity_mean_without - diversity_std_without, diversity_mean_without + diversity_std_without,
+                     color='red', alpha=0.3)
 
     # Add labels and title
     plt.xlabel('Generations')
     plt.ylabel('Diversity')
     plt.title('Diversity Over Generations with Standard Deviations')
-    plt.suptitle(f'Enemy {enemy} - {algorithm}')
+    plt.suptitle(f'Enemy {enemy}')
     plt.legend()
     plt.grid(True)
+
+    # Set x-axis limits to start where the lines start and end at the last generation
+    plt.xlim(gen_range[0], gen_range[-1])
+
     plt.tight_layout()
 
     # Show the plot
     plt.show()
 
+diversity_df_es, best_fitness_df_es, mean_fitness_df_es, std_fitness_df_es = process_results_extended(base_dir='es_enemy3', enemy=3, iterations=10, generations=50)
+diversity_df_fs, best_fitness_df_fs, mean_fitness_df_fs, std_fitness_df_fs = process_results_extended(base_dir='fs_enemy3', enemy=3, iterations=10, generations=50)
 
 
-diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df = process_results_extended(base_dir='es_enemy3', enemy=3, iterations=10, generations=50)
-print(diversity_df)
-print(best_fitness_df)
-print(mean_fitness_df)
-print(std_fitness_df)
+plot_fitness_results(best_fitness_df_es, mean_fitness_df_es, best_fitness_df_fs, mean_fitness_df_fs, enemy=3)
+plot_diversity_results(diversity_df_es, diversity_df_fs, enemy=3)
 
-plot_fitness_results(best_fitness_df, mean_fitness_df, enemy=3, algorithm='Without FS')
-plot_diversity_results(diversity_df, enemy=3, algorithm='Without FS')
+
+
