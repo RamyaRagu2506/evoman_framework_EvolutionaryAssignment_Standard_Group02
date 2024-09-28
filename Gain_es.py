@@ -47,7 +47,7 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     # Return the results of the fight
     return f, p, e, t,individual_gain
 
-def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
+def run_simulations_for_all(base_dir, enemy=8, n_hidden_neurons=10):
     """
     Runs the simulation for all best.txt files in the subfolders of base_dir.
     
@@ -107,8 +107,8 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
     return results_df
 
 # Example usage:
-base_directory = "es_enemy3" # Replace this with the actual path to the es_enemy4 directory
-simulation_results_df = run_simulations_for_all(base_directory, enemy=3, n_hidden_neurons=10)
+base_directory = "es_enemy8" # Replace this with the actual path to the es_enemy4 directory
+simulation_results_df = run_simulations_for_all(base_directory, enemy=8, n_hidden_neurons=10)
 
 # Output the simulation results
 print(simulation_results_df)

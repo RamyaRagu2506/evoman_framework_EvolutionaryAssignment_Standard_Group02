@@ -16,7 +16,7 @@ def load_weights(file_path):
     """
     return np.loadtxt(file_path)
 
-def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
+def simulate_enemy_fight(weights, enemy=8, n_hidden_neurons=10):
     """
     Simulates a fight between the player (with the given weights) and the specified enemy.
     
@@ -28,7 +28,7 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     Returns:
     - tuple: Fitness, player life, enemy life, time.
     """
-    # Set up the EvoMan environment for enemy 4
+    # Set up the EvoMan environment for enemy 
     env = Environment(
         enemies=[enemy],
         playermode="ai",
@@ -47,7 +47,7 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     # Return the results of the fight
     return f, p, e, t,individual_gain
 
-def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
+def run_simulations_for_all(base_dir, enemy=3, n_hidden_neurons=10):
     """
     Runs the simulation for all best.txt files in the subfolders of base_dir.
     
