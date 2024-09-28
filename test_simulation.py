@@ -90,7 +90,7 @@ def simulate_multiple_times_best(weights_path, output_dir, enemy=4, n_hidden_neu
         os.makedirs(output_dir)
 
     # Save the results to an Excel file in the test folder
-    excel_file_path = os.path.join(output_dir, 'es_enemy_4.xlsx')
+    excel_file_path = os.path.join(output_dir, 'es_enemy_3.xlsx')
     results_df.to_excel(excel_file_path, index=False)
 
     print(f"Results saved to {excel_file_path}")
@@ -98,7 +98,7 @@ def simulate_multiple_times_best(weights_path, output_dir, enemy=4, n_hidden_neu
     return results_df
 
 # Example usage:
-best_individual_path = 'es_enemy4/best_individual.txt'  # Replace with actual path to the best_individual.txt file
+best_individual_path = 'es_enemy3/best_individual.txt'  # Replace with actual path to the best_individual.txt file
 output_directory = 'test'  # Replace with actual path to the test folder
-simulation_results = simulate_multiple_times_best(best_individual_path, output_dir=output_directory, enemy=4, n_hidden_neurons=10, n_runs=5)
+simulation_results = simulate_multiple_times_best(best_individual_path, output_dir=output_directory, enemy=3, n_hidden_neurons=10, n_runs=5)
 

@@ -92,7 +92,7 @@ def process_results_extended(base_dir, enemy, iterations=10, generations=50):
     return diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df
 
 # Example usage:
-diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df = process_results_extended(base_dir='fs_enemy4', enemy=4, iterations=10, generations=50)
+diversity_df, best_fitness_df, mean_fitness_df, std_fitness_df = process_results_extended(base_dir='fs_enemy3', enemy=3, iterations=10, generations=50)
 print(diversity_df)
 print(best_fitness_df)
 print(mean_fitness_df)
@@ -184,5 +184,5 @@ def plot_diversity_results(diversity_df, enemy, algorithm):
     plt.show()
 
 # Example usage:
-plot_fitness_results(best_fitness_df, mean_fitness_df, enemy=4, algorithm='With FS')
-plot_diversity_results(diversity_df, enemy=4, algorithm='With FS')
+plot_fitness_results(best_fitness_df, mean_fitness_df, enemy=3, algorithm='With FS')
+plot_diversity_results(diversity_df, enemy=3, algorithm='With FS')

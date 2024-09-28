@@ -41,17 +41,17 @@ def create_gain_plot(es_file, fs_file):
     sns.boxplot(x='Method', y='Individual_Gain', data=combined_data)
     
     # Add titles and labels
-    plt.title('Gain Plot for Enemy 4)')
+    plt.title('Gain Plot for Enemy 3)')
     plt.xlabel('Algorithms')
     plt.ylabel('Gain')
-    plt.savefig('test/gain_plot_enemy4')
+    plt.savefig('test/gain_plot_enemy3')
 
     # Show the plot
     plt.show()
 
 # Example usage:
-es_file_path = 'test/es_enemy_4.xlsx'  # Replace with actual path to the ES file
-fs_file_path = 'test/fs_enemy_4.xlsx'  # Replace with actual path to the FS file
+es_file_path = 'test/es_enemy_3.xlsx'  # Replace with actual path to the ES file
+fs_file_path = 'test/fs_enemy_3.xlsx'  # Replace with actual path to the FS file
 
 # Create the gain plot
 create_gain_plot(es_file_path, fs_file_path)

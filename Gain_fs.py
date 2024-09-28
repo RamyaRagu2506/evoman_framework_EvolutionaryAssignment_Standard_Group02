@@ -22,7 +22,7 @@ def simulate_enemy_fight(weights, enemy=4, n_hidden_neurons=10):
     
     Args:
     - weights (np.array): Neural network weights for the player.
-    - enemy (int): The enemy number to fight against (default is enemy 4).
+    - enemy (int): The enemy number to fight against.
     - n_hidden_neurons (int): Number of hidden neurons in the player's controller.
     
     Returns:
@@ -52,8 +52,8 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
     Runs the simulation for all best.txt files in the subfolders of base_dir.
     
     Args:
-    - base_dir (str): Path to the main directory (e.g., fs_enemy4) that contains subfolders.
-    - enemy (int): The enemy number to fight against (default is enemy 4).
+    - base_dir (str): Path to the main directory that contains subfolders.
+    - enemy (int): The enemy number to fight against.
     - n_hidden_neurons (int): Number of hidden neurons in the player's controller.
     
     Returns:
@@ -107,8 +107,8 @@ def run_simulations_for_all(base_dir, enemy=4, n_hidden_neurons=10):
     return results_df
 
 # Example usage:
-base_directory = "fs_enemy4" # Replace this with the actual path to the es_enemy4 directory
-simulation_results_df = run_simulations_for_all(base_directory, enemy=4, n_hidden_neurons=10)
+base_directory = "fs_enemy3" # Replace this with the actual path to the es_enemy4 directory
+simulation_results_df = run_simulations_for_all(base_directory, enemy=3, n_hidden_neurons=10)
 
 # Output the simulation results
 print(simulation_results_df)
