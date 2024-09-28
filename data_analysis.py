@@ -165,7 +165,8 @@ def plot_fitness_results(best_fitness_df_with, mean_fitness_df_with, best_fitnes
     # plt.xlim(gen_range[0], gen_range[-1])
 
     plt.tight_layout()
-
+    # save the plot
+    plt.savefig(f"fitness_enemy{enemy}.png")
     # Show the plot
     plt.show()
 
@@ -220,6 +221,9 @@ def plot_diversity_results(diversity_df_with, diversity_df_without, enemy):
 
     plt.tight_layout()
     # Show the plot
+
+    # save the plot
+    plt.savefig(f"diversity_enemy{enemy}.png")
     plt.show()
 
 diversity_df_es, best_fitness_df_es, mean_fitness_df_es, std_fitness_df_es = process_results_extended(base_dir='es_enemy3', enemy=3, iterations=10, generations=50)
@@ -228,6 +232,7 @@ diversity_df_fs, best_fitness_df_fs, mean_fitness_df_fs, std_fitness_df_fs = pro
 
 plot_fitness_results(best_fitness_df_es, mean_fitness_df_es, best_fitness_df_fs, mean_fitness_df_fs, enemy=3)
 plot_diversity_results(diversity_df_es, diversity_df_fs, enemy=3)
+
 
 
 
