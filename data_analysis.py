@@ -162,7 +162,7 @@ def plot_fitness_results(best_fitness_df_with, mean_fitness_df_with, best_fitnes
     plt.grid(True)
 
     # Set x-axis limits to start where the lines start and end at the last generation
-    plt.xlim(gen_range[0], gen_range[-1])
+    # plt.xlim(gen_range[0], gen_range[-1])
 
     plt.tight_layout()
 
@@ -216,10 +216,9 @@ def plot_diversity_results(diversity_df_with, diversity_df_without, enemy):
     plt.grid(True)
 
     # Set x-axis limits to start where the lines start and end at the last generation
-    plt.xlim(gen_range[0], gen_range[-1])
+    # plt.xlim(gen_range[0], gen_range[-1])
 
     plt.tight_layout()
-
     # Show the plot
     plt.show()
 
