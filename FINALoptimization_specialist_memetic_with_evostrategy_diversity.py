@@ -228,21 +228,24 @@ def save_diversity_results(experiment_name, generation, diversity):
         print(f"Error: {e}. Kindly check the parameters for saving each generation diversity results.")
 
 def calculate_genotypic_diversity(population, fitness_values):
-   
-    # Sort population by fitness in descending order (higher fitness = better)
-    sorted_indices = np.argsort(fitness_values)[::-1]  # Sort fitness in descending order
-    sorted_population = population[sorted_indices]
-    n_pop = population.shape[0]
-    total_distance = 0
-    num_pairs = 0
+    try:
+    
+        # Sort population by fitness in descending order (higher fitness = better)
+        sorted_indices = np.argsort(fitness_values)[::-1]  # Sort fitness in descending order
+        sorted_population = population[sorted_indices]
+        n_pop = population.shape[0]
+        total_distance = 0
+        num_pairs = 0
 
-    # Loop over all unique pairs of individuals in the top 10
-    for i in range(n_pop):
-        for j in range(i + 1, n_pop):
-            total_distance += np.linalg.norm(population[i] - population[j])  # Euclidean distance
-            num_pairs += 1
-    # Return average distance (genotypic diversity) for the top 10 individuals
-    return total_distance / num_pairs if num_pairs > 0 else 0
+        # Loop over all unique pairs of individuals in the top 10
+        for i in range(n_pop):
+            for j in range(i + 1, n_pop):
+                total_distance += np.linalg.norm(population[i] - population[j])  # Euclidean distance
+                num_pairs += 1
+        # Return average distance (genotypic diversity) for the top 10 individuals
+        return total_distance / num_pairs if num_pairs > 0 else 0
+    except Exception as e:
+        print(f"Error: {e}. Kindly check the parameters for calculating genotypic diversity.")
 
 
 
@@ -258,10 +261,13 @@ def plot_genotypic_diversity(diversity_per_generation, generations):
 
 # Save the final best solution and fitness
 def save_final_solution(experiment_name, best_solution, best_fitness):
-    solution_path = os.path.join(experiment_name, 'best_solution.txt')
-    with open(solution_path, 'w') as file_aux:
-        file_aux.write(f"Best Solution: {best_solution}\n")
-        file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+    try:
+        solution_path = os.path.join(experiment_name, 'best_solution.txt')
+        with open(solution_path, 'w') as file_aux:
+            file_aux.write(f"Best Solution: {best_solution}\n")
+            file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+    except Exception as e:
+        print(f"Error: {e}. Kindly check the parameters for saving the final best solution.")
 
 # Main Memetic Algorithm with Evolutionary Strategy and Hill Climbing
 def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rate, experiment_name):
