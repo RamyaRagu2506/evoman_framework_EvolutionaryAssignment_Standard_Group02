@@ -174,8 +174,8 @@ diversity_df_es, best_fitness_df_es, mean_fitness_df_es, std_fitness_df_es = pro
 diversity_df_fs, best_fitness_df_fs, mean_fitness_df_fs, std_fitness_df_fs = process_results_extended(base_dir='fs_enemy3', enemy=3, iterations=10, generations=50)
 
 
-plot_fitness_results(best_fitness_df_es, mean_fitness_df_es, best_fitness_df_fs, mean_fitness_df_fs, enemy=3)
-plot_diversity_results(diversity_df_es, diversity_df_fs, enemy=3)
+plot_fitness_results(best_fitness_df_fs, mean_fitness_df_fs, best_fitness_df_es, mean_fitness_df_es, enemy=3)
+plot_diversity_results(diversity_df_fs, diversity_df_es, enemy=3)
 
 
 
