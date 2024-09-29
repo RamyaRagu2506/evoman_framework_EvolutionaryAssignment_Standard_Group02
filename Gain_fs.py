@@ -5,29 +5,11 @@ from evoman.environment import Environment
 from memetic_controller import player_controller
 
 def load_weights(file_path):
-    """
-    Loads the neural network weights from the specified file.
     
-    Args:
-    - file_path (str): Path to the file containing the network weights.
-    
-    Returns:
-    - np.array: Array of loaded weights.
-    """
     return np.loadtxt(file_path)
 
-def simulate_enemy_fight(weights, enemy=8, n_hidden_neurons=10):
-    """
-    Simulates a fight between the player (with the given weights) and the specified enemy.
+def simulate_enemy_fight(weights, enemy, n_hidden_neurons=10):
     
-    Args:
-    - weights (np.array): Neural network weights for the player.
-    - enemy (int): The enemy number to fight against.
-    - n_hidden_neurons (int): Number of hidden neurons in the player's controller.
-    
-    Returns:
-    - tuple: Fitness, player life, enemy life, time.
-    """
     # Set up the EvoMan environment for enemy 
     env = Environment(
         enemies=[enemy],
@@ -47,68 +29,54 @@ def simulate_enemy_fight(weights, enemy=8, n_hidden_neurons=10):
     # Return the results of the fight
     return f, p, e, t,individual_gain
 
-def run_simulations_for_all(base_dir, enemy=3, n_hidden_neurons=10):
-    """
-    Runs the simulation for all best.txt files in the subfolders of base_dir.
-    
-    Args:
-    - base_dir (str): Path to the main directory that contains subfolders.
-    - enemy (int): The enemy number to fight against.
-    - n_hidden_neurons (int): Number of hidden neurons in the player's controller.
-    
-    Returns:
-    - pd.DataFrame: DataFrame with simulation results.
-    """
-    results = []
-    best_individual_weights = None
-    max_individual_gain = float('-inf')  # Initialize the maximum gain as negative infinity
+def run_simulations_for_all(base_dir, enemy, n_hidden_neurons=10):
+    try:
+        results = []
+        individual_gains = [] 
 
-    # Loop over all subdirectories (e.g., fs_1_enemy4, fs_2_enemy4, etc.)
-    for i in range(1, 11):  # Assuming there are 10 subfolders
-        subfolder = os.path.join(base_dir, f'fs_{i}_enemy{enemy}')
-        best_weights_path = os.path.join(subfolder, 'best.txt')
+        # Loop over all sub_directories (e.g., es_1_enemy4, es_2_enemy4, etc.)
+        for i in range(1, 11):  # 10 sub_folders
+            subfolder = os.path.join(base_dir, f'fs_{i}_enemy{enemy}')
+            best_weights_path = os.path.join(subfolder, 'best.txt')
 
-        # Check if the best.txt file exists
-        if os.path.exists(best_weights_path):
-            # Load the best weights
-            best_weights = load_weights(best_weights_path)
+            # Check if the best.txt file exists
+            if os.path.exists(best_weights_path):
+                # Load the best weights
+                best_weights = load_weights(best_weights_path)
 
-            # Run the simulation
-            fitness, player_life, enemy_life, time, individual_gain = simulate_enemy_fight(best_weights, enemy, n_hidden_neurons)
+                # Run the simulation 5 times
+                for x in range(5):
+                    # Run the simulation
+                    fitness, player_life, enemy_life, time, individual_gain = simulate_enemy_fight(best_weights, enemy, n_hidden_neurons)
+                    individual_gains.append(individual_gain)  # Store the individual gain for each simulation made 
 
-            # Store the results in the list
-            results.append({
-                'Iteration': i,
-                'Fitness': fitness,
-                'Player_Life': player_life,
-                'Enemy_Life': enemy_life,
-                'Time': time,
-                'Individual_Gain': individual_gain
-            })
+                # Calculate the average individual gain
+                avg_individual_gain = np.mean(individual_gains)
 
-            # Update the best individual if this individual has the highest gain
-            if individual_gain > max_individual_gain:
-                max_individual_gain = individual_gain
-                best_individual_weights = best_weights
+                # Store the results in the list
+                results.append({
+                    'Iteration': i,
+                    'Fitness': fitness,
+                    'Player_Life': player_life,
+                    'Enemy_Life': enemy_life,
+                    'Time': time,
+                    'Avg_Individual_Gain': avg_individual_gain
+                })
 
-    # Convert the results to a DataFrame
-    results_df = pd.DataFrame(results)
+        # Convert the results to a DataFrame
+        results_df = pd.DataFrame(results)
 
-    # Save the results to a CSV file in the base directory
-    results_file = os.path.join(base_dir, 'simulation_results_fs.xls')
-    results_df.to_csv(results_file, index=False)
+        # Save the results to a CSV file in the base directory
+        results_file = os.path.join(base_dir, 'simulation_results_fs.xls')
+        results_df.to_csv(results_file, index=False)
 
-    # Save the weights of the individual with the maximum gain
-    if best_individual_weights is not None:
-        best_individual_file = os.path.join(base_dir, 'best_individual.txt')
-        np.savetxt(best_individual_file, best_individual_weights)
-        print(f"Best individual weights saved to {best_individual_file}")
+        return results_df
+    except Exception as e:
+        print(f"An error occurred: {e} Check the parameters involved")
 
-    return results_df
-
-# Example usage:
-base_directory = "fs_enemy3" # Replace this with the actual path to the es_enemy4 directory
-simulation_results_df = run_simulations_for_all(base_directory, enemy=3, n_hidden_neurons=10)
+base_directory = "fs_enemy8" 
+enemy = 8
+simulation_results_df = run_simulations_for_all(base_directory, enemy, n_hidden_neurons=10)
 
 # Output the simulation results
 print(simulation_results_df)
