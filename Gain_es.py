@@ -67,15 +67,15 @@ def run_simulations_for_all(base_dir, enemy, n_hidden_neurons=10):
         results_df = pd.DataFrame(results)
 
         # Save the results to a CSV file in the base directory
-        results_file = os.path.join(base_dir, 'simulation_results_es.xls')
-        results_df.to_csv(results_file, index=False)
+        results_file = os.path.join(base_dir, 'simulation_results_es.xlsx')
+        results_df.to_excel(results_file, index=False)
 
         return results_df
     except Exception as e:
         print(f"An error occurred: {e} Check the parameters involved")
 
-base_directory = "es_enemy8" 
-enemy = 8
+base_directory = "es_enemy3" 
+enemy = 3
 simulation_results_df = run_simulations_for_all(base_directory, enemy, n_hidden_neurons=10)
 
 # Output the simulation results

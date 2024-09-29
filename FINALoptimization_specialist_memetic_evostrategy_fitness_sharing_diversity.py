@@ -167,21 +167,12 @@ def blend_recombination(step_sizes, pop, shared_fit_pop, n_vars, alpha=DEFAULT_A
     return offspring, offspring_step_size
 
 
-# Mutation: Gaussian mutation
+# Gaussian mutation
 def gaussian_mutation(individual, step_size, tau= DEFAULT_TAU, tau_prime= DEFAULT_TAU_PRIME, epsilon=1e-8):
-# Global mutation on step sizes (applies to all dimensions)
     global_mutation = np.exp(tau * np.random.randn())
-    
-    # Local mutation on each step size (applies to each dimension independently)
     local_mutation = tau_prime * np.random.randn(*step_size.shape)
-    
-    # Update the step sizes with both global and local mutation
     new_step_size = step_size * global_mutation + local_mutation
-    
-    # Apply the boundary condition to prevent step sizes from becoming too small
     new_step_size[new_step_size < epsilon] = epsilon
-    
-    # Mutate the individual (xi) using the updated step sizes
     new_individual = individual + new_step_size * np.random.randn(*individual.shape)
     
     return new_individual, new_step_size
@@ -242,9 +233,6 @@ def save_diversity_results(experiment_name, generation, diversity):
         file_aux.write(f"Generation {generation + 1}: Genotypic Diversity (Top 10): {diversity:.6f}\n")
 
 def calculate_genotypic_diversity(population, fitness_values):
-    """
-    Calculate genotypic diversity using the top 10 individuals based on fitness.
-    """
     # Sort population by fitness in descending order (higher fitness = better)
     sorted_indices = np.argsort(fitness_values)[::-1]  # Sort fitness in descending order
     sorted_population = population[sorted_indices]
@@ -262,12 +250,6 @@ def calculate_genotypic_diversity(population, fitness_values):
 
 
 def plot_genotypic_diversity(diversity_per_generation, generations):
-    """
-    Plot the genotypic diversity across generations.
-
-    :param diversity_per_generation: A list of genotypic diversity values across generations.
-    :param generations: List of generation numbers.
-    """
     plt.figure(figsize=(10, 6))
     plt.plot(generations, diversity_per_generation, label="Genotypic Diversity", color='b', marker='o')
     plt.xlabel("Generations")
@@ -307,7 +289,7 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
         # Evaluate offspring
         raw_fit_offspring = evaluate_fitnesses(env, offspring)
 
-        # Apply Local Search (Hill Climbing) to offspring
+        # Local Search 
         for i in range(len(offspring)):
             refined_individual, refined_fitness = hill_climb(env, offspring[i], mutation_rate)
             offspring[i], raw_fit_offspring[i] = refined_individual, refined_fitness
@@ -337,12 +319,6 @@ def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, 
     return pop[np.argmax(raw_fit_pop)], np.max(raw_fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
 def generate_experiment_name(iteration_no, enemy_name):
-    """
-    Generate the experiment name based on the iteration number and enemy name.
-    
-    Parameters:
-    iteration_no (int): The current iteration number.
-    enemy_name (int): The enemy number for the experiment."""
     return f"fs_{iteration_no}_enemy{enemy_name}"
 
 def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, SIGMA_SHARE, DEFAULT_MUTATION_RATE):
