@@ -88,13 +88,17 @@ def run_game_in_worker(experiment_name, controller, ind):
 
 
 # Initialize population
-def init_population(pop_size, env, n_vars, dom_l, dom_u):
-    pop = np.random.uniform(low=dom_l, high=dom_u, size=(pop_size, n_vars))
-    step_sizes = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
-    fit_pop = evaluate_fitnesses(env, pop)
-    print(f"INITIAL POPULATION: Best Fitness: {round(max(fit_pop), 6)} - Mean Fitness: {round(np.mean(fit_pop), 6)} - Std Fitness: {round(np.std(fit_pop), 6)}")
-    print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
-    return pop, step_sizes, fit_pop
+def instantiate_initial_population(pop_size, env, n_vars, dom_l, dom_u):
+    try: 
+        population_np_array = np.random.uniform(low=dom_l, high=dom_u, size=(pop_size, n_vars))
+        step_sizes_np_array = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
+        fittest_population_list = evaluate_fitnesses(env, population_np_array)
+        print(f"INITIAL POPULATION: Best Fitness: {round(max(fittest_population_list), 6)} - Mean Fitness: {round(np.mean(fittest_population_list), 6)} - Std Fitness: {round(np.std(fittest_population_list), 6)}")
+        print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes_np_array), "std: ", np.std(step_sizes_np_array))
+        return population_np_array, step_sizes_np_array, fittest_population_list
+    except Exception as e:
+        print(f"Error: {e}. Kindly check whether the parameters in instatiating the population are satisfied.")
+        return None, None, None
 
 # Save the population and fitness values (solution state)
 def save_population_state(population, fitness, generation, experiment_name):
@@ -371,7 +375,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, D
         else:
             # New evolution
             print("\nNEW EVOLUTION\n")
-            pop, step_sizes, fit_pop = init_population(DEFAULT_POP_SIZE, env, n_vars, DOM_L, DOM_U)
+            pop, step_sizes, fit_pop = instantiate_initial_population(DEFAULT_POP_SIZE, env, n_vars, DOM_L, DOM_U)
             fit_pop = evaluate_fitnesses(env, pop)
             ini_g = 0
 

@@ -6,15 +6,6 @@ import numpy as np
 
 # Function to extract diversity results from a text file
 def extract_diversity(file_path):
-    """
-    Extracts the genotypic diversity values from the file.
-
-    Args:
-    - file_path (str): Path to the diversity_results.txt file.
-
-    Returns:
-    - list of float: Diversity values for each generation.
-    """
     with open(file_path, 'r') as f:
         results = [float(line.split(':')[-1]) for line in f.readlines()]
     return results
@@ -22,15 +13,6 @@ def extract_diversity(file_path):
 
 # Function to extract fitness results with Best Fitness, Mean Fitness, and Std Dev Fitness
 def extract_fitness_extended(file_path):
-    """
-    Extracts the best fitness, mean fitness, and standard deviation fitness values from the file.
-
-    Args:
-    - file_path (str): Path to the fitness_results.txt file.
-
-    Returns:
-    - tuple of lists: Best Fitness, Mean Fitness, and Std Dev Fitness values for each generation.
-    """
     best_fitness = []
     mean_fitness = []
     std_fitness = []
@@ -47,21 +29,6 @@ def extract_fitness_extended(file_path):
 
 # Function to process all iterations and generate DataFrames for diversity and fitness
 def process_results_extended(base_dir, enemy, iterations=10, generations=50):
-    """
-    Processes diversity and fitness results (including mean and std dev) over multiple iterations
-    and stores them in DataFrames.
-
-    Args:
-    - base_dir (str): Base directory containing iteration folders.
-    - iterations (int): Number of iterations.
-    - generations (int): Number of generations.
-
-    Returns:
-    - pd.DataFrame: DataFrame of diversity results (n_iterations x generations).
-    - pd.DataFrame: DataFrame of best fitness results (n_iterations x generations).
-    - pd.DataFrame: DataFrame of mean fitness results (n_iterations x generations).
-    - pd.DataFrame: DataFrame of std dev fitness results (n_iterations x generations).
-    """
     # Initialize lists to store data
     diversity_data = []
     best_fitness_data = []
@@ -101,16 +68,6 @@ def process_results_extended(base_dir, enemy, iterations=10, generations=50):
 
 
 def plot_fitness_results(best_fitness_df_with, mean_fitness_df_with, best_fitness_df_without, mean_fitness_df_without, enemy):
-    """
-    Plots the mean of the best and mean fitness across generations, along with standard deviations,
-    for both EA with fitness sharing and EA without fitness sharing.
-
-    Args:
-    - best_fitness_df_with (pd.DataFrame): Best fitness results (n_iterations x generations) for EA with fitness sharing.
-    - mean_fitness_df_with (pd.DataFrame): Mean fitness results (n_iterations x generations) for EA with fitness sharing.
-    - best_fitness_df_without (pd.DataFrame): Best fitness results (n_iterations x generations) for EA without fitness sharing.
-    - mean_fitness_df_without (pd.DataFrame): Mean fitness results (n_iterations x generations) for EA without fitness sharing.
-    """
     generations = best_fitness_df_with.shape[1]
 
     # Calculate the mean and standard deviation for EA with fitness sharing
@@ -172,14 +129,6 @@ def plot_fitness_results(best_fitness_df_with, mean_fitness_df_with, best_fitnes
 
 
 def plot_diversity_results(diversity_df_with, diversity_df_without, enemy):
-    """
-    Plots the mean diversity across generations, along with standard deviations,
-    for both EA with fitness sharing and EA without fitness sharing.
-
-    Args:
-    - diversity_df_with (pd.DataFrame): Diversity results (n_iterations x generations) for EA with fitness sharing.
-    - diversity_df_without (pd.DataFrame): Diversity results (n_iterations x generations) for EA without fitness sharing.
-    """
     generations = diversity_df_with.shape[1]
 
     # Calculate the mean and standard deviation for EA with fitness sharing
@@ -210,7 +159,7 @@ def plot_diversity_results(diversity_df_with, diversity_df_without, enemy):
 
     # Add labels and title
     plt.xlabel('Generations')
-    plt.ylabel('Diversity')
+    plt.ylabel('Avg pair Eucledian Distance ')
     plt.title('Diversity Over Generations with Standard Deviations')
     plt.suptitle(f'Enemy {enemy}')
     plt.legend()
