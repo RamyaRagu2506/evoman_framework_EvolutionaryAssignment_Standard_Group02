@@ -84,32 +84,42 @@ def evaluate_fitnesses(env, population):
 
 def sharing_function(ind1, ind2, sigma_share): #sigma_share should be around 3.255764119219941=10% of the maximum distance between two 265-dimensional vectors
     # Similarity based on Euclidean distance between two individuals
-    distance = np.linalg.norm(ind1 - ind2)
-    if distance < sigma_share:
-        return 1 - (distance / sigma_share)
-    else:
-        return 0
+    try:
+        distance = np.linalg.norm(ind1 - ind2)
+        if distance < sigma_share:
+            return 1 - (distance / sigma_share)
+        else:
+            return 0
+    except Exception as e:
+        print(f'Error:{e}. Check the parameter for calculation of shared distance')
+
 
 def evaluate_shared_fitnesses(env, population, sigma_share):
-    raw_fitnesses = evaluate_fitnesses(env, population)
-    shared_fitnesses = []
-    for i, raw_fitness in enumerate(raw_fitnesses):
-        summation_sh = 0
-        for j, ind in enumerate(population):
-            summation_sh += sharing_function(population[i], ind, sigma_share)
-        new_fitness = raw_fitness / summation_sh
-        shared_fitnesses.append(new_fitness)
-    return raw_fitnesses, shared_fitnesses
+    try:
+        raw_fitnesses = evaluate_fitnesses(env, population)
+        shared_fitnesses = []
+        for i, raw_fitness in enumerate(raw_fitnesses):
+            summation_sh = 0
+            for j, ind in enumerate(population):
+                summation_sh += sharing_function(population[i], ind, sigma_share)
+            new_fitness = raw_fitness / summation_sh
+            shared_fitnesses.append(new_fitness)
+        return raw_fitnesses, shared_fitnesses
+    except Exception as e:
+        print(f'Error:{e}. Check the parameter for evaluating the shared fitnesses')
 
 def raw_fit_to_shared_fit(population, raw_fitnesses, sigma_share):
-    shared_fitnesses = []
-    for i, raw_fitness in enumerate(raw_fitnesses):
-        summation_sh = 0
-        for j, ind in enumerate(population):
-            summation_sh += sharing_function(population[i], ind, sigma_share)
-        new_fitness = raw_fitness / summation_sh
-        shared_fitnesses.append(new_fitness)
-    return np.array(shared_fitnesses)
+    try:
+        shared_fitnesses = []
+        for i, raw_fitness in enumerate(raw_fitnesses):
+            summation_sh = 0
+            for j, ind in enumerate(population):
+                summation_sh += sharing_function(population[i], ind, sigma_share)
+            new_fitness = raw_fitness / summation_sh
+            shared_fitnesses.append(new_fitness)
+        return np.array(shared_fitnesses)
+    except Exception as e:
+        print(f'Error:{e}. Check the parameter for calculation of shared fitnesses')
             
 
 def run_game_in_worker(experiment_name, controller, ind):
@@ -119,90 +129,114 @@ def run_game_in_worker(experiment_name, controller, ind):
 
 # Initialize population
 def init_population(pop_size, env, n_vars, dom_l, dom_u, sigma_share):
-    pop = np.random.uniform(low=dom_l, high=dom_u, size=(pop_size, n_vars))
-    step_sizes = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
-    raw_fit_pop, shared_fit_pop = evaluate_shared_fitnesses(env, pop, sigma_share)
-    print(f"INITIAL POPULATION: Best Fitness: {round(max(raw_fit_pop), 6)} - Mean Fitness: {round(np.mean(raw_fit_pop), 6)} - Std Fitness: {round(np.std(raw_fit_pop), 6)}")
-    print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
-    return pop, step_sizes, raw_fit_pop, shared_fit_pop
+    try:
+        pop = np.random.uniform(low=dom_l, high=dom_u, size=(pop_size, n_vars))
+        step_sizes = np.random.uniform(low=-0.5, high=0.5, size=(pop_size, n_vars))
+        raw_fit_pop, shared_fit_pop = evaluate_shared_fitnesses(env, pop, sigma_share)
+        print(f"INITIAL POPULATION: Best Fitness: {round(max(raw_fit_pop), 6)} - Mean Fitness: {round(np.mean(raw_fit_pop), 6)} - Std Fitness: {round(np.std(raw_fit_pop), 6)}")
+        print("INITIAL POPULATION: step size metrics: mean: ", np.mean(step_sizes), "std: ", np.std(step_sizes))
+        return pop, step_sizes, raw_fit_pop, shared_fit_pop
+    except Exception as e:
+        print(f'Error:{e}. Check the parameter for initialization of population')
 
 # Save and load population state
 def save_population_state(population, raw_fitness, shared_fitness, generation, experiment_name):
-    population_path = os.path.join(experiment_name, 'memetic_population_de.pkl')
-    with open(population_path, 'wb') as f:
-        pickle.dump([population, raw_fitness, shared_fitness, generation], f)
-    print("Population state saved successfully.")
+    try:
+        population_path = os.path.join(experiment_name, 'memetic_population_de.pkl')
+        with open(population_path, 'wb') as f:
+            pickle.dump([population, raw_fitness, shared_fitness, generation], f)
+        print("Population state saved successfully.")
+    except Exception as e:
+        print(f'Error:{e}. Check the parameter for saving population state')
 
 def load_population_state(experiment_name):
-    population_path = os.path.join(experiment_name, 'memetic_population_de.pkl')
-    with open(population_path, 'rb') as f:
-        population, raw_fitness, shared_fitness, generation = pickle.load(f)
-    print("Population state loaded successfully.")
-    return population, raw_fitness, shared_fitness,  generation
+    try:
+        population_path = os.path.join(experiment_name, 'memetic_population_de.pkl')
+        with open(population_path, 'rb') as f:
+            population, raw_fitness, shared_fitness, generation = pickle.load(f)
+        print("Population state loaded successfully.")
+        return population, raw_fitness, shared_fitness,  generation
+    except Exception as e:
+        print(f'Error:{e}. Check the parameter for loading population state')
 
 # Parent selection methods
 def select_parents_tournament(pop, shared_fit_pop, tournament_size=10):
-    shared_fit_pop = np.array(shared_fit_pop)
-    tournament_indices = np.random.randint(0, pop.shape[0], tournament_size)
-    tournament = shared_fit_pop[tournament_indices]
-    best_parent_idx = np.argmax(tournament)
-    best_parent = pop[tournament_indices[best_parent_idx]]
-    return tournament_indices[best_parent_idx], best_parent
+    try:
+        shared_fit_pop = np.array(shared_fit_pop)
+        tournament_indices = np.random.randint(0, pop.shape[0], tournament_size)
+        tournament = shared_fit_pop[tournament_indices]
+        best_parent_idx = np.argmax(tournament)
+        best_parent = pop[tournament_indices[best_parent_idx]]
+        return tournament_indices[best_parent_idx], best_parent
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for parent selection')
 
 
 # Recombination: Blend Recombination
 def blend_recombination(step_sizes, pop, shared_fit_pop, n_vars, alpha=DEFAULT_ALPHA):
-    n_offspring = np.random.randint(DEFAULT_POP_SIZE + 1, DEFAULT_POP_SIZE * 2)
-    offspring = np.zeros((n_offspring, n_vars))
-    offspring_step_size = np.zeros((n_offspring, n_vars))
+    try:
+        n_offspring = np.random.randint(DEFAULT_POP_SIZE + 1, DEFAULT_POP_SIZE * 2)
+        offspring = np.zeros((n_offspring, n_vars))
+        offspring_step_size = np.zeros((n_offspring, n_vars))
 
-    for i in range(n_offspring):
-        parent_idx1, parent1 = select_parents_tournament(pop, shared_fit_pop)
-        parent_idx2, parent2 = select_parents_tournament(pop, shared_fit_pop)
-        difference = np.abs(parent1 - parent2)
-        min_values = np.minimum(parent1, parent2) - difference * alpha
-        max_values = np.maximum(parent1, parent2) + difference * alpha
-        offspring[i] = np.random.uniform(min_values, max_values)
-        offspring_step_size[i] = np.mean(np.stack((step_sizes[parent_idx1], step_sizes[parent_idx2])), axis=0)
-    return offspring, offspring_step_size
+        for i in range(n_offspring):
+            parent_idx1, parent1 = select_parents_tournament(pop, shared_fit_pop)
+            parent_idx2, parent2 = select_parents_tournament(pop, shared_fit_pop)
+            difference = np.abs(parent1 - parent2)
+            min_values = np.minimum(parent1, parent2) - difference * alpha
+            max_values = np.maximum(parent1, parent2) + difference * alpha
+            offspring[i] = np.random.uniform(min_values, max_values)
+            offspring_step_size[i] = np.mean(np.stack((step_sizes[parent_idx1], step_sizes[parent_idx2])), axis=0)
+        return offspring, offspring_step_size
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for blend recombination')
 
 
 # Gaussian mutation
 def gaussian_mutation(individual, step_size, tau= DEFAULT_TAU, tau_prime= DEFAULT_TAU_PRIME, epsilon=1e-8):
-    global_mutation = np.exp(tau * np.random.randn())
-    local_mutation = tau_prime * np.random.randn(*step_size.shape)
-    new_step_size = step_size * global_mutation + local_mutation
-    new_step_size[new_step_size < epsilon] = epsilon
-    new_individual = individual + new_step_size * np.random.randn(*individual.shape)
-    
-    return new_individual, new_step_size
+    try:
+        global_mutation = np.exp(tau * np.random.randn())
+        local_mutation = tau_prime * np.random.randn(*step_size.shape)
+        new_step_size = step_size * global_mutation + local_mutation
+        new_step_size[new_step_size < epsilon] = epsilon
+        new_individual = individual + new_step_size * np.random.randn(*individual.shape)
+        
+        return new_individual, new_step_size
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for gaussian mutation')
 
 # Local Search: Hill Climbing
 def hill_climb(env, individual, mutation_rate, n_iterations=LOCAL_SEARCH_ITER):
-    best_individual = individual.copy()
-    best_fitness = simulation(env, best_individual)
-    for _ in range(n_iterations):
-        new_individual = individual + mutation_rate * np.random.randn(*individual.shape)
-        new_fitness = simulation(env, new_individual)
-        if new_fitness > best_fitness:
-            best_fitness = new_fitness
-            best_individual = new_individual
-    return best_individual, best_fitness
+    try:
+        best_individual = individual.copy()
+        best_fitness = simulation(env, best_individual)
+        for _ in range(n_iterations):
+            new_individual = individual + mutation_rate * np.random.randn(*individual.shape)
+            new_fitness = simulation(env, new_individual)
+            if new_fitness > best_fitness:
+                best_fitness = new_fitness
+                best_individual = new_individual
+        return best_individual, best_fitness
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for hill climbing')
 
 
 # Survivor selection with elitism
 def survivor_selection_elitism(pop, raw_fit_pop, step_sizes, raw_fit_offspring, offspring, offspring_step_size, pop_size, sigma_share):
-    parents_and_offspring = np.concatenate((pop, offspring), axis=0)
-    parents_and_offspring_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
-    parents_and_offspring_raw_fitnesses = np.concatenate((raw_fit_pop, raw_fit_offspring), axis=0)
-     
-    # Calculate shared fitness for all individuals
-    shared_fitnesses = raw_fit_to_shared_fit(parents_and_offspring, parents_and_offspring_raw_fitnesses, sigma_share)
-    
-    # Select elite individuals based on shared fitness
-    elite_idx = np.argsort(shared_fitnesses)[-pop_size:]
-    elite_idx = elite_idx.astype(int)
-    return parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], shared_fitnesses[elite_idx],parents_and_offspring_step_sizes[elite_idx]
+    try:
+        parents_and_offspring = np.concatenate((pop, offspring), axis=0)
+        parents_and_offspring_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
+        parents_and_offspring_raw_fitnesses = np.concatenate((raw_fit_pop, raw_fit_offspring), axis=0)
+        
+        # Calculate shared fitness for all individuals
+        shared_fitnesses = raw_fit_to_shared_fit(parents_and_offspring, parents_and_offspring_raw_fitnesses, sigma_share)
+        
+        # Select elite individuals based on shared fitness
+        elite_idx = np.argsort(shared_fitnesses)[-pop_size:]
+        elite_idx = elite_idx.astype(int)
+        return parents_and_offspring[elite_idx], parents_and_offspring_raw_fitnesses[elite_idx], shared_fitnesses[elite_idx],parents_and_offspring_step_sizes[elite_idx]
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for survivor selection')
 
 
 # Plot fitness over generations and save as image
@@ -223,30 +257,39 @@ def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_
 
 # Function to save results to a file
 def save_generation_results(experiment_name, generation, best_fitness, mean_fitness, std_fitness):
-    results_path = os.path.join(experiment_name, 'fitness_results.txt')
-    with open(results_path, 'a') as file_aux:
-        file_aux.write(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Standard Deviation Fitness: {std_fitness:.6f}\n")
+    try:
+        results_path = os.path.join(experiment_name, 'fitness_results.txt')
+        with open(results_path, 'a') as file_aux:
+            file_aux.write(f"Generation {generation + 1}: Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Standard Deviation Fitness: {std_fitness:.6f}\n")
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for saving each generation results')
 
 def save_diversity_results(experiment_name, generation, diversity):
-    results_path = os.path.join(experiment_name, 'diversity_results.txt')
-    with open(results_path, 'a') as file_aux:
-        file_aux.write(f"Generation {generation + 1}: Genotypic Diversity (Top 10): {diversity:.6f}\n")
+    try:
+        results_path = os.path.join(experiment_name, 'diversity_results.txt')
+        with open(results_path, 'a') as file_aux:
+            file_aux.write(f"Generation {generation + 1}: Genotypic Diversity (Top 10): {diversity:.6f}\n")
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for saving each generation diversity results')
 
 def calculate_genotypic_diversity(population, fitness_values):
-    # Sort population by fitness in descending order (higher fitness = better)
-    sorted_indices = np.argsort(fitness_values)[::-1]  # Sort fitness in descending order
-    sorted_population = population[sorted_indices]
-    n_pop = population.shape[0]
-    total_distance = 0
-    num_pairs = 0
+    try:
+        # Sort population by fitness in descending order (higher fitness = better)
+        sorted_indices = np.argsort(fitness_values)[::-1]  # Sort fitness in descending order
+        sorted_population = population[sorted_indices]
+        n_pop = population.shape[0]
+        total_distance = 0
+        num_pairs = 0
 
-    # Loop over all unique pairs of individuals in the top 10
-    for i in range(n_pop):
-        for j in range(i + 1, n_pop):
-            total_distance += np.linalg.norm(population[i] - population[j])  # Euclidean distance
-            num_pairs += 1
-    # Return average distance (genotypic diversity) for the top 10 individuals
-    return total_distance / num_pairs if num_pairs > 0 else 0
+        # Loop over all unique pairs of individuals in the top 10
+        for i in range(n_pop):
+            for j in range(i + 1, n_pop):
+                total_distance += np.linalg.norm(population[i] - population[j])  # Euclidean distance
+                num_pairs += 1
+        # Return average distance (genotypic diversity) for the top 10 individuals
+        return total_distance / num_pairs if num_pairs > 0 else 0
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for calculating genotypic diversity')
 
 
 def plot_genotypic_diversity(diversity_per_generation, generations):
@@ -260,10 +303,13 @@ def plot_genotypic_diversity(diversity_per_generation, generations):
 
 # Save the final best solution and fitness
 def save_final_solution(experiment_name, best_solution, best_fitness):
-    solution_path = os.path.join(experiment_name, 'best_solution.txt')
-    with open(solution_path, 'w') as file_aux:
-        file_aux.write(f"Best Solution: {best_solution}\n")
-        file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+    try:
+        solution_path = os.path.join(experiment_name, 'best_solution.txt')
+        with open(solution_path, 'w') as file_aux:
+            file_aux.write(f"Best Solution: {best_solution}\n")
+            file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+    except Exception as e:
+        print(f'Error:{e}. Check the parameters for saving the final solution')
 
 # Main Memetic Algorithm with Evolutionary Strategy and Hill Climbing
 def memetic_algorithm(env, pop, raw_fit_pop, shared_fit_pop, npop, gens, ini_g, n_vars, mutation_rate, sigma_share, experiment_name):
