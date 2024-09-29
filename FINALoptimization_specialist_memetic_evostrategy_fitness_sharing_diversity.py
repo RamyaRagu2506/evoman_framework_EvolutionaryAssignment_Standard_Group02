@@ -364,7 +364,7 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, S
         if os.path.exists(experiment_name + '/memetic_population_de.pkl'):
         # Continue evolution
             print("\nCONTINUING EVOLUTION\n")
-            pop, raw_fit_pop, ini_g = load_population_state(experiment_name)
+            pop, raw_fit_pop, shared_fit_pop, ini_g = load_population_state(experiment_name)
         else:
         # New evolution
             print("\nNEW EVOLUTION\n")
