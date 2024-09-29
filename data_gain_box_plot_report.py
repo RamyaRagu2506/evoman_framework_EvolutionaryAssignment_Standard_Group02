@@ -12,21 +12,21 @@ def gain_plot(es_file, fs_file):
         fs_data = load_excel_data(fs_file)
 
         # Add a label to each dataset to differentiate between ES and FS
-        es_data['Method'] = 'Memetic ES'  
-        fs_data['Method'] = 'Memetic with FS'  
+        es_data['Method'] = 'Algorithm Without FS'  
+        fs_data['Method'] = 'Algorithm with FS'  
 
         # Combine the two datasets for plotting
-        combined_data = pd.concat([es_data[['Run', 'Individual_Gain', 'Method']], fs_data[['Run', 'Individual_Gain', 'Method']]])
+        combined_data = pd.concat([es_data[['Iteration', 'Avg_Individual_Gain', 'Method']], fs_data[['Iteration', 'Avg_Individual_Gain', 'Method']]])
 
         # Create the plot
         plt.figure(figsize=(10, 6))
-        sns.boxplot(x='Method', y='Individual_Gain', data=combined_data)
+        sns.boxplot(x='Method', y='Avg_Individual_Gain', data=combined_data,hue='Method',palette=['blue','red'])
         
         # Add titles and labels
-        plt.title('Gain Plot for Enemy 4')
+        plt.title('Gain Plot for Enemy 3')
         plt.xlabel('Algorithms')
         plt.ylabel('Gain')
-        plt.savefig('test/gain_plot_enemy4')
+        plt.savefig('test/gain_plot_enemy3')
 
         # Show the plot
         plt.show()
@@ -34,8 +34,8 @@ def gain_plot(es_file, fs_file):
         print(f"An error occurred: {e} check parameters involved in gain plot")
 
 # es and fs file paths 
-es_file_path = 'test/es_enemy_4.xlsx'  
-fs_file_path = 'test/fs_enemy_4.xlsx'  
+es_file_path = 'es_enemy3/simulation_results_es.xlsx'  
+fs_file_path = 'fs_enemy3/simulation_results_fs.xlsx'  
 
 # Create the gain plot
 gain_plot(es_file_path, fs_file_path)
