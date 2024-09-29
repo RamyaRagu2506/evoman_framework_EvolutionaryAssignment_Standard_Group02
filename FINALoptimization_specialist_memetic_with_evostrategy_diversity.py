@@ -212,9 +212,7 @@ def save_diversity_results(experiment_name, generation, diversity):
         file_aux.write(f"Generation {generation + 1}: Genotypic Diversity (Top 10): {diversity:.6f}\n")
 
 def calculate_genotypic_diversity(population, fitness_values):
-    """
-    Calculate genotypic diversity using the top 10 individuals based on fitness.
-    """
+   
     # Sort population by fitness in descending order (higher fitness = better)
     sorted_indices = np.argsort(fitness_values)[::-1]  # Sort fitness in descending order
     sorted_population = population[sorted_indices]
@@ -233,12 +231,6 @@ def calculate_genotypic_diversity(population, fitness_values):
 
 
 def plot_genotypic_diversity(diversity_per_generation, generations):
-    """
-    Plot the genotypic diversity across generations.
-
-    :param diversity_per_generation: A list of genotypic diversity values across generations.
-    :param generations: List of generation numbers.
-    """
     plt.figure(figsize=(10, 6))
     plt.plot(generations, diversity_per_generation, label="Genotypic Diversity", color='b', marker='o')
     plt.xlabel("Generations")
@@ -320,12 +312,6 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
     return pop[np.argmax(fit_pop)], np.max(fit_pop), best_fitness_list, mean_fitness_list, std_fitness_list
 
 def generate_experiment_name(iteration_no, enemy_name):
-    """
-    Generate the experiment name based on the iteration number and enemy name.
-    
-    Parameters:
-    iteration_no (int): The current iteration number.
-    enemy_name (int): The enemy number for the experiment."""
     return f"es_{iteration_no}_enemy{enemy_name}"
 
 def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, DEFAULT_MUTATION_RATE):
