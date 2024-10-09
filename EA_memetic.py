@@ -26,7 +26,7 @@ import pickle
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 100
 DEFAULT_GENS = 50
-DEFAULT_ENEMY = 8
+DEFAULT_ENEMY = [1,2,3,4,5,6,7,8]
 DEFAULT_VARS = 265 # total no. of weights in consideration
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor
 DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor
@@ -67,12 +67,13 @@ def setup_environment(experiment_name, enemies, controller):
     return Environment(
         experiment_name=experiment_name,
         playermode="ai",
-        enemies=[enemies],
+        enemies=DEFAULT_ENEMY,
         player_controller=controller,
         speed="fastest",
         enemymode="static",
         level=2,
-        visuals=False
+        visuals=False,
+        multiplemode="yes",
     )
 
 
@@ -363,13 +364,15 @@ def main(DEFAULT_POP_SIZE, DEFAULT_GENS, DEFAULT_HIDDEN_NEURONS, DOM_L, DOM_U, D
         print(f"Running experiment: {experiment_name}")
 
         env = Environment(experiment_name=experiment_name,
-                      enemies=[DEFAULT_ENEMY],
+                      enemies=DEFAULT_ENEMY,
                       playermode="ai",
                       player_controller=player_controller(DEFAULT_HIDDEN_NEURONS),
                       enemymode="static",
                       level=2,
                       speed="fastest",
-                      visuals=False)
+                      visuals=False,
+                        multiplemode="yes",
+                          )
 
         n_vars = (env.get_num_sensors() + 1) * DEFAULT_HIDDEN_NEURONS + (DEFAULT_HIDDEN_NEURONS + 1) * 5
         print(f"Environment setup with {n_vars} variables per individual.")

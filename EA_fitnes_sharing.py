@@ -25,7 +25,7 @@ import pickle
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 100
 DEFAULT_GENS = 50
-DEFAULT_ENEMY = 3
+DEFAULT_ENEMY = 8
 DEFAULT_VARS = 265 # total no. of weights in consideration
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS)) # global mutation factor
 DEFAULT_TAU_PRIME = 1/np.sqrt(2* (DEFAULT_VARS)) # local mutation factor
