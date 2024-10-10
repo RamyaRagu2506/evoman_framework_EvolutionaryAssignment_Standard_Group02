@@ -235,7 +235,11 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
 
         # Recombination and Mutation
         offspring, offspring_step_sizes = blend_recombination(step_sizes, pop, fit_pop, n_vars)
-        
+            
+        # Apply Gaussian mutation to offspring
+        for i in range(len(offspring)):
+            offspring[i], offspring_step_sizes[i] = gaussian_mutation(offspring[i], offspring_step_sizes[i], mutation_rate)
+               
         # Apply Local Search (Hill Climbing) to offspring
         fit_offspring = []
         for i in range(len(offspring)):
@@ -243,10 +247,6 @@ def memetic_algorithm(env, pop, fit_pop, npop, gens, ini_g, n_vars, mutation_rat
             offspring[i] = refined_individual
             fit_offspring.append(refined_fitness)
             
-        # Apply Gaussian mutation to offspring
-        for i in range(len(offspring)):
-            offspring[i], offspring_step_sizes[i] = gaussian_mutation(offspring[i], offspring_step_sizes[i], mutation_rate)
-        
         # Evaluate offspring
         fit_offspring = evaluate_fitnesses(env, offspring,enemies = DEFAULT_ENEMY)
 
