@@ -61,13 +61,13 @@ def simulation(env, x):
 
 
 # Environment setup
-def setup_environment(experiment_name, enemies, controller, enemies=):
+def setup_environment(experiment_name, controller, enemies=DEFAULT_ENEMY):
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
     return Environment(
         experiment_name=experiment_name,
         playermode="ai",
-        enemies=DEFAULT_ENEMY,
+        enemies=enemies,
         player_controller=controller,
         speed="fastest",
         enemymode="static",
@@ -163,14 +163,16 @@ def gaussian_mutation(individual, step_size, tau= DEFAULT_TAU, tau_prime= DEFAUL
 
 # Local Search: Hill Climbing
 def hill_climb(env, individual, mutation_rate, n_iterations=LOCAL_SEARCH_ITER):
+    # best_individual = individual.copy()
+    # best_fitness = simulation(env, best_individual)
+    # for _ in range(n_iterations):
+    #     new_individual = individual + mutation_rate * np.random.randn(*individual.shape)
+    #     new_fitness = simulation(env, new_individual)
+    #     if new_fitness > best_fitness:
+    #         best_fitness = new_fitness
+    #         best_individual = new_individual
     best_individual = individual.copy()
     best_fitness = simulation(env, best_individual)
-    for _ in range(n_iterations):
-        new_individual = individual + mutation_rate * np.random.randn(*individual.shape)
-        new_fitness = simulation(env, new_individual)
-        if new_fitness > best_fitness:
-            best_fitness = new_fitness
-            best_individual = new_individual
     return best_individual, best_fitness
 
 
