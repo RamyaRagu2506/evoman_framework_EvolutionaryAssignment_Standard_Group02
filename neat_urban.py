@@ -8,20 +8,20 @@ from neat_controller import NEATController
 NUM_CORES = os.cpu_count() # Get cores of your system for parallel evaluation
 
 DEFAULT_EXPERIMENT_NAME = 'neat_evoman'
-DEFAULT_ENEMY = [1,2,3,4,5,6,7,8]  # You can adjust the enemies here
-DEFAULT_GENERATIONS = 100
+DEFAULT_ENEMY = [7, 8, 5]  # You can adjust the enemies here
+DEFAULT_GENERATIONS = 50
 
 
 
 # choose this for not using visuals and thus making experiments faster
-headless = True
+headless = False
 if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
 
 # Environment setup
-def setup_environment(experiment_name, controller, enemies=DEFAULT_ENEMY) -> Environment:
+def setup_environment(experiment_name, controller, enemies=DEFAULT_ENEMY, MULTIPLEMODE="yes") -> Environment:
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
     return Environment(
@@ -33,7 +33,7 @@ def setup_environment(experiment_name, controller, enemies=DEFAULT_ENEMY) -> Env
         enemymode="static",
         level=2,
         visuals=False,
-        multiplemode="yes",
+        multiplemode=MULTIPLEMODE,
     )
 
 # NEAT onfiguration loader
@@ -74,12 +74,50 @@ def test_solution_against_all_enemies(winner, config):
     winner_network = neat.nn.FeedForwardNetwork.create(winner, config) # Create the neural network from the winning genome
 
     controller = NEATController(winner_network)
+
     env = setup_environment(DEFAULT_EXPERIMENT_NAME, controller, enemies=all_enemies)
+    env.update_parameter('speed', 'fastest')
+    env.update_parameter("visuals", True)
 
     # Run the game and get the fitness score
-    fitness = simulation(env, controller)
+    total_gains = []
+    total_fitnesses = []
+    for i in range(10):
+        total_fitness, player_life, enemy_life, _ = env.play(pcont=controller)
+        total_gain = player_life - enemy_life
+        total_fitnesses.append(total_fitness)
+        total_gains.append(total_gain)
 
-    return fitness
+    # box plot of total gains
+    plt.boxplot(total_gains)
+    plt.title("Total Gains Against All Enemies")
+    plt.show()
+
+    # -800 to 800
+    # not sure about fitness
+    # grade depends on how many enemies you beat
+
+    # calculate gain for each enemy
+    gain_against_enemies = {}
+    for enemy in all_enemies:
+        env = setup_environment(DEFAULT_EXPERIMENT_NAME, controller, enemies=[enemy],MULTIPLEMODE="no")
+        env.update_parameter('speed', 'fastest')
+        env.update_parameter("visuals", False)
+
+
+        f, p, e, t = env.play(pcont=controller)
+        print(f"Enemy {enemy}: {f}")
+        gain = p - e
+        # -100 to 100
+        gain_against_enemies[enemy] = gain
+
+
+    # and calculate the average gain for the boxplot
+    # count wins if gain > 0
+    # gain will affect the grade, not fitness
+
+
+    return total_fitness, total_gain, gain_against_enemies
 
 # Function to plot fitness statistics (max, avg, std) over generations
 def plot_fitness_statistics(stats, title=f"enemies: {DEFAULT_ENEMY}"):
@@ -131,15 +169,18 @@ def run_neat():
     print(f"Best genome: {winner}")
 
     # Test the best genome against all enemies
-    total_fitness = test_solution_against_all_enemies(winner, config)
+    total_fitness, total_gain, gain_against_enemies = test_solution_against_all_enemies(winner, config)
 
     plot_fitness_statistics(stats)
 
-    return winner, total_fitness
+    return winner, total_fitness, total_gain, gain_against_enemies
 
 
 if __name__ == "__main__":
     print(f"Number of cores on your device: {NUM_CORES}")
-    winner, total_fitness = run_neat()
+    winner, total_fitness, total_gain, gain_against_enemies = run_neat()
     print("total fitness: ", total_fitness)
+    print("total gain: ", total_gain)
+    print("gain against enemies: ", gain_against_enemies)
+
 
