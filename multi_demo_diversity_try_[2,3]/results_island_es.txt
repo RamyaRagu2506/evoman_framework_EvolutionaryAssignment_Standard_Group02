@@ -1,0 +1,1 @@
+Generation 1: Best Fitness: 74.884108, Mean Fitness: 17.628111, Standard Deviation Fitness: 1.442804
