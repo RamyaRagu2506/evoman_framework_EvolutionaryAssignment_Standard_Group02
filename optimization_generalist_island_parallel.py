@@ -42,8 +42,9 @@ def setup_environment(experiment_name, controller, enemies=DEFAULT_ENEMY) -> Env
         player_controller=controller,
         speed="fastest",
         enemymode="static",
+        multiplemode="yes",
         level=2,
-        visuals=False
+        visuals=False,
     )
 
 
@@ -221,9 +222,11 @@ def save_final_solution(experiment_name, best_solution, best_fitness):
 
 
 def test_solution_against_all_enemies(winner):
+    print("winner shape", winner.shape)
+    print("winner", winner)
     all_enemies = [1, 2, 3, 4, 5, 6, 7, 8]
     controller = memetic_controller.player_controller(n_hidden=10)
-    controller.set(winner, None)  # Set the weights once
+    controller.set(winner, 10)  # Set the weights once
 
     total_gains = []
     total_fitnesses = []
