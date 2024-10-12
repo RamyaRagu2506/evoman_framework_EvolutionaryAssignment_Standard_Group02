@@ -1,0 +1,9 @@
+
+
+MESSAGE: Pygame initialized for simulation.
+
+PARAMETER CHANGE: speed = fastest
+
+PARAMETER CHANGE: multimode = yes
+
+PARAMETER CHANGE: visuals = False

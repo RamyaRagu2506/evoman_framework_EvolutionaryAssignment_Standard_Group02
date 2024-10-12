@@ -2,6 +2,6 @@
 
 MESSAGE: Pygame initialized for simulation.
 
-PARAMETER CHANGE: enemies = [2, 3]
+PARAMETER CHANGE: enemies = [1, 5, 7]
 
 PARAMETER CHANGE: multiplemode = yes
