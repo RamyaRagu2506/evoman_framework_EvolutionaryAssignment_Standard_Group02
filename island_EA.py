@@ -13,34 +13,45 @@ from demo_controller import player_controller
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 200  # Population size per island
-DEFAULT_GENS = 65  # Number of generations
+DEFAULT_GENS = 30 # Number of generations
 DEFAULT_VARS = 265
+
+# Tournament selection parameters
+DEFAULT_TOURNAMENT_SIZE = 10 # Number of individuals in the tournament for parent selection
+
+# params for mutation
+mutation_rate = 1 # not really used anywhere
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS))
 DEFAULT_TAU_PRIME = 1 / np.sqrt(2 * (DEFAULT_VARS))
 DEFAULT_ALPHA = 0.5
-LOCAL_SEARCH_ITER = 5
 DEFAULT_EPSILON = 1e-8
-n_islands = 3
-mutation_rate = 0.8
-migration_interval = 20
-migration_size = 2
-migration_type = "diversity"  # Can be "similarity" or "diversity"
+
+# Island model parameters
+ISLAND_ENEMIES = [[2,3], [4,5], [6,7], [1,8]] # enemies for each island
+n_islands = len(ISLAND_ENEMIES)
+migration_interval = 10 # Every n generations
+migration_size = 20 # Number of individuals to migrate
+migration_type = "diveristy"  # Can be "similarity" or "diversity" or "best"
+
+# Initialisation parameters
 INIT_POP_MU = 0  # mean of initial population
-INIT_POP_SIGMA = 0.21  # std for initial population
+INIT_POP_SIGMA = 0.2  # std for initial population
 STEPSIZE_MU = 0 # mean of step size
-STEPSIZE_SIGMA = 0.01 # std for step size
+STEPSIZE_SIGMA = 0.1 # std for step size
 dom_l, dom_u = -1, 1
-DEFAULT_TOURNAMENT_SIZE = 10
-
-DEFAULT_ENEMY = [1,2,3,4,5,6,7,8] # now only used to initialise the environment
-ISLAND_ENEMIES = [[2,3,4], [4,5,6], [6,7,8]] # enemies for each island
-DIFFERENT_ENEMIES_PER_ISLAND = True
 
 
-EXPERIMENT_NAME = f"island_demo_diversity_try_{ISLAND_ENEMIES}"
+
+ALL_ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8] # now only used to initialise the environment
+GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
+# why you would want this is because you want to see how well the population performs against all enemies not just the ones they were trained on
+# you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
 
-headless = True
+EXPERIMENT_NAME = f"island_demo_diversity_try_{migration_type}_{migration_interval}_{migration_size}_{ISLAND_ENEMIES}"
+
+
+headless = True # set to False to see the game (along with the visuals=True parameter in the environment setup)
 if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
@@ -83,9 +94,6 @@ def evaluate_fitnesses(env, population):
 def run_game_in_worker(experiment_name, controller, enemies, ind):
     env = setup_environment(experiment_name, controller, enemies)
     return simulation(env, ind)
-
-
-# Fitness evaluation using parallel workers
 
 
 # Simulation function
@@ -142,10 +150,16 @@ def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offsprin
 
 # Migration logic (similarity and diversity-based)
 def similarity(source_island, destination_best, migration_size):
+    """
+    Find the most similar individuals in the source island to the best individual in the destination island
+    """
     source_island_copy = source_island.copy()
     most_similar = []
     for _ in range(migration_size):
         similarity_score = float('inf')
+        most_similar_index = None  # Track the index of the most similar individual
+        most_similar_ind = None
+
         for index, individual in enumerate(source_island_copy):
             difference = np.abs(destination_best - individual)
             sum_diff = np.sum(difference)
@@ -155,10 +169,14 @@ def similarity(source_island, destination_best, migration_size):
                 most_similar_index = index
         most_similar.append(most_similar_ind)
         source_island_copy = np.delete(source_island_copy, most_similar_index, axis=0)
+
     return most_similar
 
 
 def diversity(source_island, destination_best, migration_size):
+    """
+    Find the most diverse individuals in the source island to the best individual in the destination island
+    """
     source_island_copy = source_island.copy()
     most_diverse = []
     for _ in range(migration_size):
@@ -174,18 +192,32 @@ def diversity(source_island, destination_best, migration_size):
         source_island_copy = np.delete(source_island_copy, most_diverse_index, axis=0)
     return most_diverse
 
+# function that returns the best individuals from source island
+def best_individuals(source_island, source_island_fit, migration_size):
+    best_indices = np.argsort(source_island_fit)[-migration_size:]
+    best_individuals = source_island[best_indices]
+    return best_individuals
+
 
 # Migration between islands
 def migrate(world_population, world_pop_fit, migration_size, migration_type):
     for i, island in enumerate(world_population):
-        best_island_index = np.argmax(world_pop_fit[i])
-        best_individual = island[best_island_index]
+        best_individual_index = np.argmax(world_pop_fit[i])
+        best_individual = island[best_individual_index] # Get the best individual of the island
         other_islands = [world_population[j] for j in range(len(world_population)) if j != i]
-        source_island = random.choice(other_islands)
+        source_island = random.choice(other_islands) # Choose a random island to migrate from (excluding the current island)
+
         if migration_type == "similarity":
             migrants = similarity(source_island, best_individual, migration_size)
-        else:
+        elif migration_type == "diversity":
             migrants = diversity(source_island, best_individual, migration_size)
+        elif migration_type == "best":
+            source_island_index = [j for j in range(len(world_population)) if (world_population[j] == source_island).all()][0]
+            migrants = best_individuals(source_island, world_pop_fit[source_island_index], migration_size)
+        else:
+            raise ValueError("Invalid migration type. Choose 'similarity' or 'diversity' or 'best'.")
+
+        # Replace the worst individuals in the current island with the migrants
         worst_indices = np.argsort(world_pop_fit[i])[:migration_size]
         for idx, migrant in zip(worst_indices, migrants):
             world_population[i][idx] = migrant
@@ -203,7 +235,7 @@ def individual_island_run(island_env, island_population, pop_fit, step_sizes, mu
 
     offspring, offspring_step_sizes = blend_recombination(step_sizes, island_population, pop_fit, DEFAULT_VARS)
     for i in range(len(offspring)):
-        offspring[i], offspring_step_sizes[i] = gaussian_mutation(offspring[i], offspring_step_sizes[i], mutation_rate)
+        offspring[i], offspring_step_sizes[i] = gaussian_mutation(offspring[i], offspring_step_sizes[i])
     fit_offspring = evaluate_fitnesses(island_env, offspring)
     return survivor_selection_elitism(island_population, pop_fit, step_sizes, fit_offspring, offspring,
                                       offspring_step_sizes, DEFAULT_POP_SIZE)
@@ -235,7 +267,7 @@ def load_population_state(experiment_name):
 
 
 # Function to plot fitness over generations and save as an image
-def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name):
+def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name, title="Fitness_Over_Generations"):
     plt.figure(figsize=(10, 6))
     plt.plot(generations, best_fitness_list, label='Best Fitness', color='b', marker='o')
     plt.plot(generations, mean_fitness_list, label='Mean Fitness', color='g', marker='x')
@@ -244,13 +276,13 @@ def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_
     # plt.plot(generations, std_fitness_list, label='Standard Deviation', color='r', marker='s')
     plt.xlabel('Generations')
     plt.ylabel('Fitness')
-    plt.title('Fitness over Generations - Island Evolutionary Strategy')
+    plt.title(title)
     plt.suptitle(experiment_name)
     plt.legend()
     plt.grid(True)
 
     # Save the plot to the experiment directory
-    plot_path = os.path.join(experiment_name, 'fitness_over_generations.png')
+    plot_path = os.path.join(experiment_name, f'{title}.png')
     plt.savefig(plot_path)
     plt.show()
 
@@ -334,6 +366,20 @@ def test_solution_against_all_enemies_multiplemode(winner):
 
     return total_fitness, total_gain
 
+
+
+
+def evaluate_fitnesses_against_all(world_population):
+    controller = player_controller(DEFAULT_HIDDEN_NEURONS)
+    all_enemies_env = setup_environment("all_enemies", controller, ALL_ENEMIES, multiplemode="yes", visuals=False)
+    fitness_against_all = []
+    for island in world_population:
+        island_fitnesses = evaluate_fitnesses(all_enemies_env, island)
+        fitness_against_all.append(island_fitnesses)
+    return fitness_against_all
+
+
+
 # Main function
 def main():
     ini = time.time()
@@ -344,11 +390,12 @@ def main():
         os.makedirs(experiment_name)
 
     controller = player_controller(DEFAULT_HIDDEN_NEURONS)
-    # env = setup_environment(experiment_name, controller, DEFAULT_ENEMY)
+    # env = setup_environment(experiment_name, controller, ALL_ENEMIES)
     envs = setup_island_environments(experiment_name, controller, ISLAND_ENEMIES, visuals=False) # initialise the environments for each island
     n_weights = (envs[0].get_num_sensors() + 1) * DEFAULT_HIDDEN_NEURONS + (DEFAULT_HIDDEN_NEURONS + 1) * 5
     print(f"Environment setup with {n_weights} variables per individual.")
 
+    all_enemies_env = setup_environment("all_enemies", controller, ALL_ENEMIES, multiplemode="yes", visuals=False)
     # Check if a previous state exists, otherwise start a new evolution
     if not os.path.exists(experiment_name + '/island_population.pkl'):
         print('NEW EVOLUTION')
@@ -364,6 +411,10 @@ def main():
         best_fitness_list, mean_fitness_list, std_fitness_list = [], [], []
         step_sizes = [np.random.normal(STEPSIZE_MU, STEPSIZE_SIGMA, size=(DEFAULT_POP_SIZE, n_weights)) for _ in range(n_islands)]
 
+    best_fitness_against_all_list = []
+    mean_fitness_against_all_list = []
+    std_fitness_against_all_list = []
+
     # Run the evolution process for generations
     for gen in range(ini_g, DEFAULT_GENS):
 
@@ -376,6 +427,18 @@ def main():
         std_fitness = np.std([np.std(fit) for fit in world_pop_fit])
 
         print(f"\nGeneration {gen}, Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Standard Deviation Fitness: {std_fitness:.6f}")
+
+            # get the statistics when testing against all enemies
+        if GET_STATS_AGAINST_ALL:
+            fitnesses_against_all = evaluate_fitnesses_against_all(world_population)
+            best_fitness_against_all = np.max([np.max(fit) for fit in fitnesses_against_all])
+            mean_fitness_against_all = np.mean([np.mean(fit) for fit in fitnesses_against_all])
+            std_fitness_against_all = np.std([np.std(fit) for fit in fitnesses_against_all])
+            print(f"Best Fitness Against All Enemies: {best_fitness_against_all:.6f}, Mean Fitness Against All Enemies: {mean_fitness_against_all:.6f}, Standard Deviation Fitness Against All Enemies: {std_fitness_against_all:.6f}")
+
+            best_fitness_against_all_list.append(best_fitness_against_all)
+            mean_fitness_against_all_list.append(mean_fitness_against_all)
+            std_fitness_against_all_list.append(std_fitness_against_all)
 
 
 
@@ -397,7 +460,11 @@ def main():
 
     # Plot and save the fitness over generations
     generations = list(range(ini_g + 1, DEFAULT_GENS + 1))
-    plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name)
+    plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name, title = "Fitness Over Generations")
+
+    # Plot and save the fitness against all enemies over generations
+    if GET_STATS_AGAINST_ALL:
+        plot_fitness(generations, best_fitness_against_all_list, mean_fitness_against_all_list, std_fitness_against_all_list, experiment_name, title = "Fitness_Against_All_Enemies")
 
     # Find the best solution across all islands
     best_island_idx = np.argmax([np.max(fit) for fit in world_pop_fit])
