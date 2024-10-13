@@ -14,7 +14,7 @@ from demo_controller import player_controller
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 30 # Number of generations
+DEFAULT_GENS = 20 # Number of generations
 DEFAULT_VARS = 265
 
 # Tournament selection parameters
@@ -24,23 +24,27 @@ DEFAULT_TOURNAMENT_SIZE = 10 # Number of individuals in the tournament for paren
 mutation_rate = 1 # not really used anywhere
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS))
 DEFAULT_TAU_PRIME = 1 / np.sqrt(2 * (DEFAULT_VARS))
-DEFAULT_ALPHA = 0.5
+DEFAULT_ALPHA = 2
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[1,2,3,4], [5,6,7,8]] # enemies for each island
+ISLAND_ENEMIES = [[2,4],[2,7],[7,8],[1,4]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
-migration_interval = 10 # Every n generations
-migration_size = 50 # Number of individuals to migrate
-migration_type = "random_best"  # Can be "similarity" or "diversity" or "best" or "random_best"
-
+migration_interval = 20 # Every n generations
+migration_size = 20 # Number of individuals to migrate
+migration_type = "best_random"  # Can be "similarity" or "diversity" or "best" or "random_best"
 TOP_PERCENT = 0.5 # percentage of the population to consider for migration if choosing random individuals
+INIT_PERIOD = 10 # number of generations with the first set of enemies
+NEW_ISLAND_ENEMIES = [[1,2,4],[1,2,4],[1,2,4],[1,2,4]] # enemies for each island after the initial period (should be the same length as island_enemies)
+CHANGE_ENEMIES_AFTER_INIT = True # change the enemies after the initial period
+
+MIGRATE_ENEMIES=False # if True, the islands will migrate to the next enemy set after the initial period, make sure to set migration type to "best" and migration size is pop suze
 
 # Initialisation parameters
 INIT_POP_MU = 0  # mean of initial population
-INIT_POP_SIGMA = 0.2  # std for initial population
+INIT_POP_SIGMA = 0.5  # std for initial population
 STEPSIZE_MU = 0 # mean of step size
-STEPSIZE_SIGMA = 0.1 # std for step size
+STEPSIZE_SIGMA = 0.5 # std for step size
 dom_l, dom_u = -1, 1
 
 
@@ -224,6 +228,12 @@ def migrate(world_population, world_pop_fit, migration_size, migration_type):
         other_islands = [world_population[j] for j in range(len(world_population)) if j != i]
         source_island = random.choice(other_islands) # Choose a random island to migrate from (excluding the current island)
 
+        if MIGRATE_ENEMIES:
+            try:
+                source_island = world_population[i+1]
+            except IndexError:
+                source_island = world_population[0]
+
         if migration_type == "similarity":
             migrants = similarity(source_island, best_individual, migration_size)
         elif migration_type == "diversity":
@@ -339,6 +349,7 @@ def test_solution_against_all_enemies_loop(winner):
         # Set up the environment
         env_test_single = setup_environment("test_env", controller, enemies=[enemy], multiplemode="no", visuals=False)
 
+
         # Play the game using the controller with the loaded weights
         fitness, player_life, enemy_life, _ = env_test_single.play(pcont=winner)  # Pass weights, not the controller
         total_gain = player_life - enemy_life
@@ -377,6 +388,7 @@ def test_solution_against_all_enemies_multiplemode(winner):
 
     # Set up the environment
     env_test_multiple = setup_environment("test_env_multiplemode", controller, enemies=all_enemies, multiplemode="yes", visuals=False)
+    # env_test_multiple.update_parameter('speed', 'normal') # Set the speed to normal if you want to visualise
 
     # Play the game using the controller with the loaded weights
     total_fitness, player_life, enemy_life, _ = env_test_multiple.play(pcont=winner)  # Pass weights, not the controller
@@ -447,7 +459,9 @@ def main():
         mean_fitness = np.mean([np.mean(fit) for fit in world_pop_fit])
         std_fitness = np.std([np.std(fit) for fit in world_pop_fit])
 
+        # print(f"generation {gen}, enemies used: {envs[0].enemies}")
         print(f"\nGeneration {gen}, Best Fitness: {best_fitness:.6f}, Mean Fitness: {mean_fitness:.6f}, Standard Deviation Fitness: {std_fitness:.6f}")
+
 
             # get the statistics when testing against all enemies
         if GET_STATS_AGAINST_ALL:
@@ -472,9 +486,15 @@ def main():
         save_generation_results(experiment_name, gen, best_fitness, mean_fitness, std_fitness)
 
         # Perform migration at intervals
-        if gen % migration_interval == 0:
+        if gen == INIT_PERIOD and CHANGE_ENEMIES_AFTER_INIT:
+            print("Initial period completed. Changing enemies")
+            envs = setup_island_environments(experiment_name, controller, NEW_ISLAND_ENEMIES, visuals=False) # initialise the environments for each island
+
+
+        if gen-INIT_PERIOD % migration_interval == 0 and gen>INIT_PERIOD:
             world_population = migrate(world_population, world_pop_fit, migration_size, migration_type)
             world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in enumerate(world_population)]
+            print(f"Migration at generation {gen} completed.")
 
         # Save the population state every generation
         save_population_state(world_population, world_pop_fit, gen, experiment_name)
@@ -517,4 +537,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
