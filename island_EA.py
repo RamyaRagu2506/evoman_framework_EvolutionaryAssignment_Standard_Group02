@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import time
 import random
 from joblib import Parallel, delayed
+import shutil
 
 from evoman.environment import Environment
 from demo_controller import player_controller
@@ -12,7 +13,7 @@ from demo_controller import player_controller
 
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
-DEFAULT_POP_SIZE = 200  # Population size per island
+DEFAULT_POP_SIZE = 100  # Population size per island
 DEFAULT_GENS = 30 # Number of generations
 DEFAULT_VARS = 265
 
@@ -27,11 +28,13 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[2,3], [4,5], [6,7], [1,8]] # enemies for each island
+ISLAND_ENEMIES = [[1,2,3,4], [5,6,7,8]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
-migration_size = 20 # Number of individuals to migrate
-migration_type = "diveristy"  # Can be "similarity" or "diversity" or "best"
+migration_size = 50 # Number of individuals to migrate
+migration_type = "random_best"  # Can be "similarity" or "diversity" or "best" or "random_best"
+
+TOP_PERCENT = 0.5 # percentage of the population to consider for migration if choosing random individuals
 
 # Initialisation parameters
 INIT_POP_MU = 0  # mean of initial population
@@ -48,7 +51,7 @@ GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
 # you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
 
-EXPERIMENT_NAME = f"island_demo_diversity_try_{migration_type}_{migration_interval}_{migration_size}_{ISLAND_ENEMIES}"
+EXPERIMENT_NAME = f"island_{migration_type}_{migration_interval}_{migration_size}_{ISLAND_ENEMIES}"
 
 
 headless = True # set to False to see the game (along with the visuals=True parameter in the environment setup)
@@ -194,10 +197,24 @@ def diversity(source_island, destination_best, migration_size):
 
 # function that returns the best individuals from source island
 def best_individuals(source_island, source_island_fit, migration_size):
+    """
+    Return the best individuals from the source island
+    """
     best_indices = np.argsort(source_island_fit)[-migration_size:]
     best_individuals = source_island[best_indices]
     return best_individuals
 
+def pick_random_individuals(source_island, source_island_fit, migration_size, top_percent=TOP_PERCENT):
+    """
+    Pick random individuals from the source island from the top x percent
+    """
+    # get the top x percent of the population
+    best_indices = np.argsort(source_island_fit)[-migration_size:]
+    source_island_best = source_island[best_indices]
+
+    random_individuals = random.choices(source_island_best, k=migration_size)
+
+    return random_individuals
 
 # Migration between islands
 def migrate(world_population, world_pop_fit, migration_size, migration_type):
@@ -214,8 +231,11 @@ def migrate(world_population, world_pop_fit, migration_size, migration_type):
         elif migration_type == "best":
             source_island_index = [j for j in range(len(world_population)) if (world_population[j] == source_island).all()][0]
             migrants = best_individuals(source_island, world_pop_fit[source_island_index], migration_size)
+        elif migration_type == "random_best":
+            source_island_index = [j for j in range(len(world_population)) if (world_population[j] == source_island).all()][0]
+            migrants = pick_random_individuals(source_island, world_pop_fit[source_island_index], migration_size)
         else:
-            raise ValueError("Invalid migration type. Choose 'similarity' or 'diversity' or 'best'.")
+            raise ValueError("Invalid migration type.")
 
         # Replace the worst individuals in the current island with the migrants
         worst_indices = np.argsort(world_pop_fit[i])[:migration_size]
@@ -395,6 +415,7 @@ def main():
     n_weights = (envs[0].get_num_sensors() + 1) * DEFAULT_HIDDEN_NEURONS + (DEFAULT_HIDDEN_NEURONS + 1) * 5
     print(f"Environment setup with {n_weights} variables per individual.")
 
+    print("Name of the experiment: ", experiment_name)
     all_enemies_env = setup_environment("all_enemies", controller, ALL_ENEMIES, multiplemode="yes", visuals=False)
     # Check if a previous state exists, otherwise start a new evolution
     if not os.path.exists(experiment_name + '/island_population.pkl'):
@@ -482,8 +503,18 @@ def main():
     # Save the final solution
     save_final_solution(experiment_name, best_solution, best_fitness)
 
+    # delete folders
+    for i in range(n_islands):
+        shutil.rmtree(f"{EXPERIMENT_NAME}_island_{i}")
+    shutil.rmtree("test_env")
+    shutil.rmtree("test_env_multiplemode")
+
+
     print(f"\nExecution time: {round((time.time() - ini) / 60, 2)} minutes")
+
+
 
 
 if __name__ == "__main__":
     main()
+
