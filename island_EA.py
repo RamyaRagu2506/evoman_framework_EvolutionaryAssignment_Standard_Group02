@@ -13,9 +13,10 @@ from demo_controller import player_controller
 
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
-DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 20 # Number of generations
 DEFAULT_VARS = 265
+DEFAULT_POP_SIZE = 100  # Population size per island
+DEFAULT_GENS = 40 # Number of generations
+
 
 # Tournament selection parameters
 DEFAULT_TOURNAMENT_SIZE = 10 # Number of individuals in the tournament for parent selection
@@ -24,19 +25,20 @@ DEFAULT_TOURNAMENT_SIZE = 10 # Number of individuals in the tournament for paren
 mutation_rate = 1 # not really used anywhere
 DEFAULT_TAU = 1 / np.sqrt(2 * np.sqrt(DEFAULT_VARS))
 DEFAULT_TAU_PRIME = 1 / np.sqrt(2 * (DEFAULT_VARS))
-DEFAULT_ALPHA = 2
+DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
 ISLAND_ENEMIES = [[2,4],[2,7],[7,8],[1,4]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
-migration_interval = 20 # Every n generations
+migration_interval = 10 # Every n generations
 migration_size = 20 # Number of individuals to migrate
-migration_type = "best_random"  # Can be "similarity" or "diversity" or "best" or "random_best"
+migration_type = "random_best" # Can be "similarity" or "diversity" or "best" or "random_best"
 TOP_PERCENT = 0.5 # percentage of the population to consider for migration if choosing random individuals
-INIT_PERIOD = 10 # number of generations with the first set of enemies
-NEW_ISLAND_ENEMIES = [[1,2,4],[1,2,4],[1,2,4],[1,2,4]] # enemies for each island after the initial period (should be the same length as island_enemies)
+INIT_PERIOD = 10 #DEFAULT_GENS//2 - migration_interval # number of generations with the first set of enemies
+NEW_ISLAND_ENEMIES = ISLAND_ENEMIES# [[1,2,4],[7,6,2],[1,2,4],[1,2,4]] # enemies for each island after the initial period (should be the same length as island_enemies)
 CHANGE_ENEMIES_AFTER_INIT = True # change the enemies after the initial period
+
 
 MIGRATE_ENEMIES=False # if True, the islands will migrate to the next enemy set after the initial period, make sure to set migration type to "best" and migration size is pop suze
 
@@ -491,7 +493,7 @@ def main():
             envs = setup_island_environments(experiment_name, controller, NEW_ISLAND_ENEMIES, visuals=False) # initialise the environments for each island
 
 
-        if gen-INIT_PERIOD % migration_interval == 0 and gen>INIT_PERIOD:
+        if gen % migration_interval == 0 and gen>INIT_PERIOD:
             world_population = migrate(world_population, world_pop_fit, migration_size, migration_type)
             world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in enumerate(world_population)]
             print(f"Migration at generation {gen} completed.")
@@ -513,12 +515,27 @@ def main():
     best_solution = world_population[best_island_idx][best_individual_idx]
     best_fitness = world_pop_fit[best_island_idx][best_individual_idx]
 
+    # find the best solution across all islands based on the best fitness against all enemies
+    if GET_STATS_AGAINST_ALL:
+        best_island_idx_all = np.argmax([np.max(fit) for fit in fitnesses_against_all])
+        best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
+        best_solution_all = world_population[best_island_idx_all][best_individual_idx_all]
+        best_fitness_all = fitnesses_against_all[best_island_idx_all][best_individual_idx_all]
+        print(f"Best solution against all enemies: {best_solution_all}")
+        print(f"Best solution shape against all enemies: {best_solution_all.shape}")
+        print(f"Best fitness against all enemies: {best_fitness_all}")
+
     print(f"Best solution shape: {best_solution.shape}")
     print(f"Best fitness: {best_fitness}")
 
     # Test the best solution
     test_solution_against_all_enemies_loop(best_solution)
     test_solution_against_all_enemies_multiplemode(best_solution)
+
+    if GET_STATS_AGAINST_ALL:
+        print("Testing the best solution obtained by checking on all enemies")
+        test_solution_against_all_enemies_loop(best_solution_all)
+        test_solution_against_all_enemies_multiplemode(best_solution_all)
 
     # Save the final solution
     save_final_solution(experiment_name, best_solution, best_fitness)
