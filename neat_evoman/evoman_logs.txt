@@ -1,5 +1,0 @@
-
-
-PARAMETER CHANGE: speed = fastest
-
-PARAMETER CHANGE: visuals = False
