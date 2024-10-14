@@ -12,12 +12,14 @@ import csv
 from evoman.environment import Environment
 from demo_controller import player_controller
 
+from scipy.stats import wilcoxon
+
 
 # Global Configuration
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_VARS = 265
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 250 # Number of generations
+DEFAULT_GENS = 265 # Number of generations
 
 # recombinantion parameters
 COMMA_STRAT = True
@@ -379,9 +381,11 @@ def save_final_solution(experiment_name, best_solution, best_fitness, suffix="")
         file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
 
 
+
+
 def test_solution_against_all_enemies_loop(winner, title="Total gain against all enemies", num_runs=10):
     """
-    Test the solution against all enemies in a loop with multiple runs, averaging the results.
+    Test the solution against all enemies in a loop with multiple runs, averaging the results, and apply Wilcoxon signed-rank test.
     """
     all_enemies = [1, 2, 3, 4, 5, 6, 7, 8]
     controller = player_controller(DEFAULT_HIDDEN_NEURONS)
@@ -430,6 +434,22 @@ def test_solution_against_all_enemies_loop(winner, title="Total gain against all
     wins = sum([1 for gain in average_gains.values() if gain > 0])
     print(f"Wins (based on average gain): {wins} out of 8")
 
+    # Perform Wilcoxon signed-rank test for each enemy against gain 0
+    wilcoxon_results = []
+    for enemy in all_enemies:
+        # Perform the Wilcoxon signed-rank test
+        if len(cumulative_gains[enemy]) > 0 and np.any(cumulative_gains[enemy]):
+            stat, p_value = wilcoxon(cumulative_gains[enemy], alternative='two-sided')
+            wilcoxon_results.append((enemy, p_value))
+        else:
+            wilcoxon_results.append((enemy, None))
+
+    # Print the Wilcoxon test p-values in a single line
+    wilcoxon_output = ', '.join(
+        [f"Enemy {enemy}: p-value = {p_value:.6f}" if p_value is not None else f"Enemy {enemy}: p-value = N/A" for
+         enemy, p_value in wilcoxon_results])
+    print(f"Wilcoxon test results (against gain 0): {wilcoxon_output}")
+
     # Plot the results (boxplot of gains across all enemies)
     plt.boxplot([cumulative_gains[enemy] for enemy in all_enemies])
     plt.title(title)
@@ -437,7 +457,6 @@ def test_solution_against_all_enemies_loop(winner, title="Total gain against all
     plt.show()
 
     return average_fitnesses, average_gains
-
 def test_solution_against_all_enemies_multiplemode(winner):
     """
     Test the solution against all enemies with multiplemode enabled
