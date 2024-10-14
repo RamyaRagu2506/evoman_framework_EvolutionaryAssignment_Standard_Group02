@@ -34,8 +34,8 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[1,5,7],[1,5,7],[1,5,7]] # enemies for each island - made same for all 
-ISLAND_ENEMY = [1,5,7] # only for the sake of naming the experiment 
+ISLAND_ENEMIES = [[2,4,8],[2,4,8],[2,4,8]] # enemies for each island - made same for all 
+ISLAND_ENEMY = [2,4,8] # only for the sake of naming the experiment 
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
 migration_size = 50 # Number of individuals to migrate
