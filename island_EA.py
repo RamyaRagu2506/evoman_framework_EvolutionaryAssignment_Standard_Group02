@@ -19,7 +19,7 @@ from scipy.stats import wilcoxon
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_VARS = 265
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 265 # Number of generations
+DEFAULT_GENS = 100 # Number of generations
 
 # recombinantion parameters
 COMMA_STRAT = True
@@ -36,7 +36,7 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[1, 2, 4], [1, 5, 6], [1, 2, 4, 7], [2, 4, 6, 8]] # enemies for each island
+ISLAND_ENEMIES = [[4, 2],[2,6],[7,8],[1,5]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
 migration_size = 50 # Number of individuals to migrate
@@ -374,12 +374,50 @@ def save_generation_results(experiment_name, generation, best_fitness, mean_fitn
 
 
 # Function to save the final best solution and fitness
+
 def save_final_solution(experiment_name, best_solution, best_fitness, suffix=""):
     solution_path = os.path.join(experiment_name, f'best_solution{suffix}.txt')
     with open(solution_path, 'w') as file_aux:
-        file_aux.write(f"Best Solution: {best_solution}\n")
+        file_aux.write(f"Best Solution: {np.array2string(best_solution)}\n")
         file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
+import os
+import numpy as np
 
+def load_final_solution(experiment_name, suffix=""):
+    solution_path = os.path.join(experiment_name, f'best_solution{suffix}.txt')
+
+    try:
+        with open(solution_path, 'r') as file_aux:
+            lines = file_aux.readlines()
+
+            # Combine the lines of the best solution into a single string, excluding "Best Solution:" prefix
+            best_solution_lines = []
+            reading_solution = False
+            for line in lines:
+                if "Best Solution:" in line:
+                    best_solution_lines.append(line.split(":", 1)[1].strip())  # Start reading after 'Best Solution:'
+                    reading_solution = True
+                elif reading_solution and "Best Fitness:" not in line:
+                    best_solution_lines.append(line.strip())  # Continue reading the solution part
+                elif "Best Fitness:" in line:
+                    break  # Stop reading when reaching 'Best Fitness:'
+
+            best_solution_str = ' '.join(best_solution_lines)
+            best_solution = np.fromstring(best_solution_str.strip('[]'), sep=' ')
+            # Extract the best fitness and convert to float
+            for line in lines:
+                if "Best Fitness:" in line:
+                    best_fitness = float(line.split(":", 1)[1].strip())
+                    break
+            print(f"Best solution loaded successfully from {solution_path}")
+            return best_solution, best_fitness
+
+    except FileNotFoundError:
+        print(f"File not found: {solution_path}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    return None, None
 
 
 
@@ -541,18 +579,22 @@ def main():
         world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in enumerate(world_population)] # evaluate fitness for each island with different enemies
         ini_g = 0  # Start from generation 0
         best_fitness_list, mean_fitness_list, std_fitness_list = [], [], []
+
+        best_fitness_outside_loop_All = 0
+        best_solution_outside_loop_All = None
     else:
         print('CONTINUING EVOLUTION')
         world_population, world_pop_fit, ini_g = load_population_state(experiment_name)
         best_fitness_list, mean_fitness_list, std_fitness_list = [], [], []
         step_sizes = [np.random.normal(STEPSIZE_MU, STEPSIZE_SIGMA, size=(DEFAULT_POP_SIZE, n_weights)) for _ in range(n_islands)]
 
+        # load the best solution against all enemies outside loop
+        best_solution_outside_loop_All, best_fitness_outside_loop_All = load_final_solution(experiment_name, suffix="_all")
     best_fitness_against_all_list = []
     mean_fitness_against_all_list = []
     std_fitness_against_all_list = []
 
-    best_fitness_outside_loop_All = 0
-    best_solution_outside_loop_All = None
+
 
     # Run the evolution process for generations
     for gen in range(ini_g, DEFAULT_GENS):
