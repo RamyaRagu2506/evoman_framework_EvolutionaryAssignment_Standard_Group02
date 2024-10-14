@@ -17,7 +17,7 @@ from demo_controller import player_controller
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_VARS = 265
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 200 # Number of generations
+DEFAULT_GENS = 250 # Number of generations
 
 # recombinantion parameters
 COMMA_STRAT = True
@@ -379,54 +379,64 @@ def save_final_solution(experiment_name, best_solution, best_fitness, suffix="")
         file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
 
 
-def test_solution_against_all_enemies_loop(winner, title="Total gain against all enemies"):
+def test_solution_against_all_enemies_loop(winner, title="Total gain against all enemies", num_runs=10):
     """
-    Test the solution against all enemies in a loop with multipplemode disabled
+    Test the solution against all enemies in a loop with multiple runs, averaging the results.
     """
-
     all_enemies = [1, 2, 3, 4, 5, 6, 7, 8]
     controller = player_controller(DEFAULT_HIDDEN_NEURONS)
     controller.set(winner, n_inputs=20)  # Set the weights once
 
-    total_gains = []
-    total_fitnesses = []
-    player_lives = []
-    enemy_lives = []
+    # Initialize dictionaries to store cumulative results for all runs
+    cumulative_fitnesses = {enemy: [] for enemy in all_enemies}
+    cumulative_gains = {enemy: [] for enemy in all_enemies}
+    cumulative_player_lives = {enemy: [] for enemy in all_enemies}
+    cumulative_enemy_lives = {enemy: [] for enemy in all_enemies}
 
-    for enemy in all_enemies:
-        # Set up the environment
-        env_test_single = setup_environment("test_env", controller, enemies=[enemy], multiplemode="no", visuals=False)
+    # Run the testing loop for 'num_runs' iterations
+    for run in range(num_runs):
+        # print(f"Run {run + 1} out of {num_runs}")
 
+        for enemy in all_enemies:
+            # Set up the environment for each enemy
+            env_test_single = setup_environment("test_env", controller, enemies=[enemy], multiplemode="no",
+                                                visuals=False)
 
-        # Play the game using the controller with the loaded weights
-        fitness, player_life, enemy_life, _ = env_test_single.play(pcont=winner)  # Pass weights, not the controller
-        total_gain = player_life - enemy_life
+            # Play the game using the controller with the loaded weights
+            fitness, player_life, enemy_life, _ = env_test_single.play(pcont=winner)  # Pass weights, not the controller
+            total_gain = player_life - enemy_life
 
-        total_fitnesses.append(fitness)
-        total_gains.append(total_gain)
-        player_lives.append(player_life)
-        enemy_lives.append(enemy_life)
+            # Append results to the cumulative lists
+            cumulative_fitnesses[enemy].append(fitness)
+            cumulative_gains[enemy].append(total_gain)
+            cumulative_player_lives[enemy].append(player_life)
+            cumulative_enemy_lives[enemy].append(enemy_life)
 
-        print(f"Enemy {enemy}: Fitness = {fitness}, Gain = {total_gain}, Player Life = {player_life}, Enemy Life = {enemy_life}")
+            # print(f"Enemy {enemy}: Fitness = {fitness}, Gain = {total_gain}, Player Life = {player_life}, Enemy Life = {enemy_life}")
 
+    # Now calculate the average results across all runs for each enemy
+    average_fitnesses = {enemy: np.mean(cumulative_fitnesses[enemy]) for enemy in all_enemies}
+    average_gains = {enemy: np.mean(cumulative_gains[enemy]) for enemy in all_enemies}
+    average_player_lives = {enemy: np.mean(cumulative_player_lives[enemy]) for enemy in all_enemies}
+    average_enemy_lives = {enemy: np.mean(cumulative_enemy_lives[enemy]) for enemy in all_enemies}
+
+    # Print the results for each enemy
     print(title)
-    print(f"average fitness: {np.mean(total_fitnesses)}, average gain: {np.mean(total_gains)}, average player life: {np.mean(player_lives)}, average enemy life: {np.mean(enemy_lives)}")
+    for enemy in all_enemies:
+        print(f"Enemy {enemy}: Average Fitness = {average_fitnesses[enemy]}, Average Gain = {average_gains[enemy]}, "
+              f"Average Player Life = {average_player_lives[enemy]}, Average Enemy Life = {average_enemy_lives[enemy]}")
 
+    # Count the number of wins (average gain > 0)
+    wins = sum([1 for gain in average_gains.values() if gain > 0])
+    print(f"Wins (based on average gain): {wins} out of 8")
 
-    # count how many wins (gain > 0)
-    wins = sum([1 for gain in total_gains if gain > 0])
-    print(f"Wins: {wins} out of 8")
-    # Plot the results
-    plt.boxplot(total_gains)
-
-
+    # Plot the results (boxplot of gains across all enemies)
+    plt.boxplot([cumulative_gains[enemy] for enemy in all_enemies])
     plt.title(title)
     plt.suptitle(f"Wins: {wins} out of 8 - trained on {ISLAND_ENEMIES}", fontsize=10)
-
     plt.show()
 
-    return total_fitnesses, total_gains
-
+    return average_fitnesses, average_gains
 
 def test_solution_against_all_enemies_multiplemode(winner):
     """
