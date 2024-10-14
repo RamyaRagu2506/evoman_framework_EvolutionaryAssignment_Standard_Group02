@@ -452,7 +452,20 @@ def test_solution_against_all_enemies_loop(winner, title="Total gain against all
 
     # Plot the results (boxplot of gains across all enemies)
     plt.boxplot([cumulative_gains[enemy] for enemy in all_enemies])
+    # add a line at 0
+    plt.axhline(y=0, color='r', linestyle='--', label='Zero Gain')
+    # add a line at the average gain
+    plt.axhline(y=np.mean(list(average_gains.values())), color='g', linestyle='--', label='Average Gain')
+
+    # add a red dot where the difference is significant (use average gains)
+    for enemy, p_value in wilcoxon_results:
+        if enemy==1 and p_value is not None and p_value < 0.05:
+            plt.plot(enemy, average_gains[enemy], 'ro', label='p < 0.05') # only label the first enemy (otherwise the labels are repeated)
+        elif p_value is not None and p_value < 0.05:
+            plt.plot(enemy, average_gains[enemy], 'ro')
+
     plt.title(title)
+    plt.legend()
     plt.suptitle(f"Wins: {wins} out of 8 - trained on {ISLAND_ENEMIES}", fontsize=10)
     plt.show()
 
