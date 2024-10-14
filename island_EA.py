@@ -6,6 +6,8 @@ import time
 import random
 from joblib import Parallel, delayed
 import shutil
+import itertools
+import csv
 
 from evoman.environment import Environment
 from demo_controller import player_controller
@@ -15,7 +17,10 @@ from demo_controller import player_controller
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_VARS = 265
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 40 # Number of generations
+DEFAULT_GENS = 60 # Number of generations
+
+# recombinantion parameters
+COMMA_STRAT = True
 
 
 # Tournament selection parameters
@@ -29,15 +34,15 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[2,4],[2,7],[7,8],[1,4]] # enemies for each island
+ISLAND_ENEMIES = [[1,2,3,4,5,6,7,8],[1,2,3,4,5,6,7,8], [1,4,6]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
-migration_size = 20 # Number of individuals to migrate
+migration_size = 50 # Number of individuals to migrate
 migration_type = "random_best" # Can be "similarity" or "diversity" or "best" or "random_best"
 TOP_PERCENT = 0.5 # percentage of the population to consider for migration if choosing random individuals
-INIT_PERIOD = 10 #DEFAULT_GENS//2 - migration_interval # number of generations with the first set of enemies
+INIT_PERIOD = 30 #DEFAULT_GENS//2 - migration_interval # number of generations with the first set of enemies
 NEW_ISLAND_ENEMIES = ISLAND_ENEMIES# [[1,2,4],[7,6,2],[1,2,4],[1,2,4]] # enemies for each island after the initial period (should be the same length as island_enemies)
-CHANGE_ENEMIES_AFTER_INIT = True # change the enemies after the initial period
+CHANGE_ENEMIES_AFTER_INIT = False # change the enemies after the initial period
 
 
 MIGRATE_ENEMIES=False # if True, the islands will migrate to the next enemy set after the initial period, make sure to set migration type to "best" and migration size is pop suze
@@ -52,12 +57,12 @@ dom_l, dom_u = -1, 1
 
 
 ALL_ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8] # now only used to initialise the environment
-GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
+GET_STATS_AGAINST_ALL = False # get statistics against all enemies per generation
 # why you would want this is because you want to see how well the population performs against all enemies not just the ones they were trained on
 # you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
 
-EXPERIMENT_NAME = f"island_{migration_type}_{migration_interval}_{migration_size}_{ISLAND_ENEMIES}"
+EXPERIMENT_NAME = f"island_{migration_type}_{migration_interval}_{migration_size}_{ISLAND_ENEMIES}_{COMMA_STRAT}"
 
 
 headless = True # set to False to see the game (along with the visuals=True parameter in the environment setup)
@@ -113,7 +118,10 @@ def simulation(env, x):
 
 # Recombination (Blend Crossover)
 def blend_recombination(step_sizes, pop, fit_pop, n_vars, alpha=DEFAULT_ALPHA):
-    n_offspring = len(pop)
+    if COMMA_STRAT:
+        n_offspring = 3*len(pop)
+    else:
+        n_offspring = len(pop)
     offspring = np.zeros((n_offspring, n_vars))
     offspring_step_size = np.zeros((n_offspring, n_vars))
 
@@ -150,19 +158,49 @@ def gaussian_mutation(individual, step_size, tau=DEFAULT_TAU, tau_prime=DEFAULT_
 
 # Survivor selection (elitism)
 def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_size, pop_size):
-    combined_population = np.concatenate((pop, offspring), axis=0)
-    combined_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
-    combined_fitness = np.concatenate((fit_pop, fit_offspring), axis=0)
-    elite_indices = np.argsort(combined_fitness)[-pop_size:] # Select the best individuals of the combined population size pop_size
-    return combined_population[elite_indices], combined_fitness[elite_indices], combined_step_sizes[elite_indices]
+    if COMMA_STRAT:
+        offspring = np.array(offspring)
+        offspring_step_size = np.array(offspring_step_size)
+        fit_offspring = np.array(fit_offspring)
+        elite_indices = np.argsort(fit_offspring)[-pop_size:]  # Sort and select best offspring only
+        # Return only the top offspring
+        return offspring[elite_indices], fit_offspring[elite_indices], offspring_step_size[elite_indices]
 
+    else:
+        combined_population = np.concatenate((pop, offspring), axis=0)
+        combined_step_sizes = np.concatenate((step_sizes, offspring_step_size), axis=0)
+        combined_fitness = np.concatenate((fit_pop, fit_offspring), axis=0)
+        elite_indices = np.argsort(combined_fitness)[-pop_size:] # Select the best individuals of the combined population size pop_size
+        return combined_population[elite_indices], combined_fitness[elite_indices], combined_step_sizes[elite_indices]
+def blend_recombination(step_sizes, pop, fit_pop, n_vars, alpha=DEFAULT_ALPHA):
+    if COMMA_STRAT:
+        n_offspring = 3*len(pop)
+    else:
+        n_offspring = len(pop)
+    offspring = np.zeros((n_offspring, n_vars))
+    offspring_step_size = np.zeros((n_offspring, n_vars))
+
+    for i in range(n_offspring):
+        parent_idx1, parent1 = select_parents_tournament(pop, fit_pop)
+        parent_idx2, parent2 = select_parents_tournament(pop, fit_pop)
+        difference = np.abs(parent1 - parent2)
+        min_values = np.minimum(parent1, parent2) - difference * alpha
+        max_values = np.maximum(parent1, parent2) + difference * alpha
+        offspring[i] = np.random.uniform(min_values, max_values)
+        offspring_step_size[i] = np.mean(np.stack((step_sizes[parent_idx1], step_sizes[parent_idx2])), axis=0)
+    return offspring, offspring_step_size
 
 # Migration logic (similarity and diversity-based)
-def similarity(source_island, destination_best, migration_size):
+def similarity(source_island, source_island_fit,destination_best, migration_size, TOP_PERCENT=TOP_PERCENT):
     """
     Find the most similar individuals in the source island to the best individual in the destination island
     """
     source_island_copy = source_island.copy()
+    # get the best TOP_PERCENT
+    best_indices = np.argsort(source_island_fit)[-migration_size:]
+    source_island_copy = source_island[best_indices]
+
+
     most_similar = []
     for _ in range(migration_size):
         similarity_score = float('inf')
@@ -182,11 +220,15 @@ def similarity(source_island, destination_best, migration_size):
     return most_similar
 
 
-def diversity(source_island, destination_best, migration_size):
+def diversity(source_island, source_island_fit, destination_best, migration_size):
     """
     Find the most diverse individuals in the source island to the best individual in the destination island
     """
     source_island_copy = source_island.copy()
+    # get the best TOP_PERCENT
+    best_indices = np.argsort(source_island_fit)[-migration_size:]
+    source_island_copy = source_island[best_indices]
+
     most_diverse = []
     for _ in range(migration_size):
         diversity_score = 0
@@ -237,9 +279,11 @@ def migrate(world_population, world_pop_fit, migration_size, migration_type):
                 source_island = world_population[0]
 
         if migration_type == "similarity":
-            migrants = similarity(source_island, best_individual, migration_size)
+            source_island_index = [j for j in range(len(world_population)) if (world_population[j] == source_island).all()][0]
+            migrants = similarity(source_island, world_pop_fit[source_island_index], best_individual, migration_size)
         elif migration_type == "diversity":
-            migrants = diversity(source_island, best_individual, migration_size)
+            source_island_index = [j for j in range(len(world_population)) if (world_population[j] == source_island).all()][0]
+            migrants = diversity(source_island, world_pop_fit[source_island_index], best_individual, migration_size)
         elif migration_type == "best":
             source_island_index = [j for j in range(len(world_population)) if (world_population[j] == source_island).all()][0]
             migrants = best_individuals(source_island, world_pop_fit[source_island_index], migration_size)
@@ -335,7 +379,7 @@ def save_final_solution(experiment_name, best_solution, best_fitness):
         file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
 
 
-def test_solution_against_all_enemies_loop(winner):
+def test_solution_against_all_enemies_loop(winner, title="Total gain against all enemies"):
     """
     Test the solution against all enemies in a loop with multipplemode disabled
     """
@@ -361,6 +405,7 @@ def test_solution_against_all_enemies_loop(winner):
 
         print(f"Enemy {enemy}: Fitness = {fitness}, Gain = {total_gain}")
 
+    print(title)
     print(f"average fitness: {np.mean(total_fitnesses)}, average gain: {np.mean(total_gains)}")
 
 
@@ -371,7 +416,7 @@ def test_solution_against_all_enemies_loop(winner):
     plt.boxplot(total_gains)
 
 
-    plt.title(f"Total Gains Against All Enemies")
+    plt.title(title)
     plt.suptitle(f"Wins: {wins} out of 8 - trained on {ISLAND_ENEMIES}", fontsize=10)
 
     plt.show()
@@ -393,10 +438,20 @@ def test_solution_against_all_enemies_multiplemode(winner):
     # env_test_multiple.update_parameter('speed', 'normal') # Set the speed to normal if you want to visualise
 
     # Play the game using the controller with the loaded weights
-    total_fitness, player_life, enemy_life, _ = env_test_multiple.play(pcont=winner)  # Pass weights, not the controller
-    total_gain = player_life - enemy_life
+    fitnesses = []
+    gains = []
+    for _ in range(10):
+        total_fitness, player_life, enemy_life, _ = env_test_multiple.play(pcont=winner)
+        total_gain = player_life - enemy_life
+        fitnesses.append(total_fitness)
+        gains.append(total_gain)
 
-    print(f"Multiplemode test: Fitness = {total_fitness}, Gain = {total_gain}")
+   # box plot of total gains - always exactly the same?
+   #  plt.boxplot(gains)
+   #  plt.title("Total Gains Against All Enemies (10 games)")
+   #  plt.suptitle(f"{EXPERIMENT_NAME}")
+   #  plt.show()
+    print(f"Multiplemode test: Mean Fitness = {np.mean(fitnesses)}, Mean Gain = {np.mean(gains)}")
 
     return total_fitness, total_gain
 
@@ -416,6 +471,7 @@ def evaluate_fitnesses_against_all(world_population):
 
 # Main function
 def main():
+    GET_STATS_AGAINST_ALL = True
     ini = time.time()
 
     # Set up environment
@@ -450,6 +506,8 @@ def main():
     mean_fitness_against_all_list = []
     std_fitness_against_all_list = []
 
+    best_fitness_outside_loop_All = None
+
     # Run the evolution process for generations
     for gen in range(ini_g, DEFAULT_GENS):
 
@@ -477,7 +535,11 @@ def main():
             mean_fitness_against_all_list.append(mean_fitness_against_all)
             std_fitness_against_all_list.append(std_fitness_against_all)
 
-
+            # Save the best solution OUTSIDE LOOP
+            if best_fitness_outside_loop_All is None or best_fitness_against_all > best_fitness_outside_loop_All:
+                best_island_idx_all = np.argmax([np.max(fit) for fit in fitnesses_against_all])
+                best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
+                best_solution_outside_loop_All = world_population[best_island_idx_all][best_individual_idx_all].copy()  # Save the actual solution
 
         # Store fitness results for plotting
         best_fitness_list.append(best_fitness)
@@ -493,7 +555,7 @@ def main():
             envs = setup_island_environments(experiment_name, controller, NEW_ISLAND_ENEMIES, visuals=False) # initialise the environments for each island
 
 
-        if gen % migration_interval == 0 and gen>INIT_PERIOD:
+        if gen % migration_interval == 0 and gen >= INIT_PERIOD:
             world_population = migrate(world_population, world_pop_fit, migration_size, migration_type)
             world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in enumerate(world_population)]
             print(f"Migration at generation {gen} completed.")
@@ -521,21 +583,25 @@ def main():
         best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
         best_solution_all = world_population[best_island_idx_all][best_individual_idx_all]
         best_fitness_all = fitnesses_against_all[best_island_idx_all][best_individual_idx_all]
-        print(f"Best solution against all enemies: {best_solution_all}")
-        print(f"Best solution shape against all enemies: {best_solution_all.shape}")
-        print(f"Best fitness against all enemies: {best_fitness_all}")
 
-    print(f"Best solution shape: {best_solution.shape}")
-    print(f"Best fitness: {best_fitness}")
+
+        # print(f"Best solution shape against all enemies: {best_solution_all.shape}")
+        # print(f"Best fitness against all enemies: {best_fitness_all}")
+
+    # print(f"Best solution shape: {best_solution.shape}")
+    # print(f"Best fitness: {best_fitness}")
 
     # Test the best solution
-    test_solution_against_all_enemies_loop(best_solution)
+    total_fitnesses, total_gains = test_solution_against_all_enemies_loop(best_solution, title="picked based on subset")
     test_solution_against_all_enemies_multiplemode(best_solution)
 
     if GET_STATS_AGAINST_ALL:
         print("Testing the best solution obtained by checking on all enemies")
-        test_solution_against_all_enemies_loop(best_solution_all)
+        total_fitnesses_all, total_gains_all = test_solution_against_all_enemies_loop(best_solution_all, title="picked based on all enemies")
         test_solution_against_all_enemies_multiplemode(best_solution_all)
+
+        test_solution_against_all_enemies_loop(best_solution_outside_loop_All, title="outside loop")
+
 
     # Save the final solution
     save_final_solution(experiment_name, best_solution, best_fitness)
@@ -545,12 +611,150 @@ def main():
         shutil.rmtree(f"{EXPERIMENT_NAME}_island_{i}")
     shutil.rmtree("test_env")
     shutil.rmtree("test_env_multiplemode")
+    # shutil.rmtree(EXPERIMENT_NAME)
+
+
 
 
     print(f"\nExecution time: {round((time.time() - ini) / 60, 2)} minutes")
-
-
+    return total_gains, total_gains_all
 
 
 if __name__ == "__main__":
+    # grid_search_island_model_parameters()
     main()
+
+
+
+
+
+# grid search
+#
+# def set_global_params(ISLAND_ENEMIES_GRID, migration_interval_GRID, migration_size_GRID, migration_type_GRID, TOP_PERCENT_GRID, INIT_PERIOD_GRID, COMMA_STRAT_GRID,
+#                       DEFAULT_POP_SIZE_GRID, DEFAULT_GENS_GRID, INIT_POP_MU_GRID, INIT_POP_SIGMA_GRID, STEPSIZE_MU_GRID, STEPSIZE_SIGMA_GRID, experiment_name_grid):
+#     global n_islands, MIGRATE_ENEMIES, headless, migration_interval, migration_size, migration_type
+#     global TOP_PERCENT, INIT_PERIOD, COMMA_STRAT, DEFAULT_POP_SIZE, DEFAULT_GENS
+#     global INIT_POP_MU, INIT_POP_SIGMA, STEPSIZE_MU, STEPSIZE_SIGMA, EXPERIMENT_NAME
+#
+#     # Update island-related parameters
+#     n_islands = len(ISLAND_ENEMIES_GRID)
+#     MIGRATE_ENEMIES = False  # We are not migrating enemies
+#     headless = True  # Ensure the execution is headless (no display)
+#
+#     # Update the parameters globally
+#     migration_interval = migration_interval_GRID
+#     migration_size = migration_size_GRID
+#     migration_type = migration_type_GRID
+#     TOP_PERCENT = TOP_PERCENT_GRID
+#     INIT_PERIOD = INIT_PERIOD_GRID
+#     COMMA_STRAT = COMMA_STRAT_GRID
+#
+#     # Update initialization parameters globally
+#     DEFAULT_POP_SIZE = DEFAULT_POP_SIZE_GRID
+#     DEFAULT_GENS = DEFAULT_GENS_GRID
+#     INIT_POP_MU = INIT_POP_MU_GRID
+#     INIT_POP_SIGMA = INIT_POP_SIGMA_GRID
+#     STEPSIZE_MU = STEPSIZE_MU_GRID
+#     STEPSIZE_SIGMA = STEPSIZE_SIGMA_GRID
+#
+#     # Update the experiment name
+#     EXPERIMENT_NAME = experiment_name_grid
+#
+#     print(f"Global parameters set: \n"
+#           f"ISLAND_ENEMIES: {ISLAND_ENEMIES_GRID}, \n"
+#           f"migration_interval: {migration_interval}, \n"
+#           f"migration_size: {migration_size}, \n"
+#           f"migration_type: {migration_type}, \n"
+#           f"TOP_PERCENT: {TOP_PERCENT}, \n"
+#           f"INIT_PERIOD: {INIT_PERIOD}, \n"
+#           f"COMMA_STRAT: {COMMA_STRAT}, \n"
+#           f"DEFAULT_POP_SIZE: {DEFAULT_POP_SIZE}, \n"
+#           f"DEFAULT_GENS: {DEFAULT_GENS}, \n"
+#           f"INIT_POP_MU: {INIT_POP_MU}, \n"
+#           f"INIT_POP_SIGMA: {INIT_POP_SIGMA}, \n"
+#           f"STEPSIZE_MU: {STEPSIZE_MU}, \n"
+#           f"STEPSIZE_SIGMA: {STEPSIZE_SIGMA}, \n"
+#           f"EXPERIMENT_NAME: {EXPERIMENT_NAME}")
+#
+# def grid_search_island_model_parameters():
+#     # Define the hyperparameter grid
+#     param_grid = {
+#         'ISLAND_ENEMIES_GRID': [
+#             [[2,4], [2,6], [7,8], [1,5]],
+#              [[1,2,5], [2,5,6], [1,7,8], [1,5,6]],
+#              [[2,3,4,8], [1,2,5,6], [1,5,7,8], [2,4,7,8]],
+#              [[2,4],[7,8], [1,5], [3,6]],
+#         ],
+#         'migration_interval_GRID': [10, 20],
+#         'migration_size_GRID': [10, 20, 30],
+#         'migration_type_GRID': ['similarity', 'diversity', 'best', 'random_best'],
+#         'TOP_PERCENT_GRID': [0.25, 0.5, 0.75],
+#         'INIT_PERIOD_GRID': [0],
+#         "COMMA_STRAT": [True, False],
+#     }
+#
+#     # Prepare to store results
+#     output_file = 'grid_search_results_total_gain_FINAL.txt'
+#     output_file_csv = 'grid_search_results_total_gain_FINAL.csv'
+#
+#     # Generate all combinations of parameters from the grid
+#     grid_combinations = list(itertools.product(*param_grid.values()))
+#
+#     # Iterate over all combinations
+#     for combo in grid_combinations:
+#         ISLAND_ENEMIES_GRID, migration_interval_GRID, migration_size_GRID, migration_type_GRID, TOP_PERCENT_GRID, INIT_PERIOD_GRID, COMMA_STRAT_GRID = combo
+#
+#         experiment_name_grid = f"grid_search_{migration_type_GRID}_{migration_interval_GRID}_{migration_size_GRID}_{ISLAND_ENEMIES_GRID}_{TOP_PERCENT_GRID}_{INIT_PERIOD_GRID}_{COMMA_STRAT_GRID}"
+#
+#         # Set global parameters using the helper function
+#         set_global_params(ISLAND_ENEMIES_GRID, migration_interval_GRID, migration_size_GRID, migration_type_GRID, TOP_PERCENT_GRID, INIT_PERIOD_GRID, COMMA_STRAT_GRID,
+#                           DEFAULT_POP_SIZE, DEFAULT_GENS, INIT_POP_MU, INIT_POP_SIGMA, STEPSIZE_MU, STEPSIZE_SIGMA, experiment_name_grid)
+#
+#         # Run the evolutionary strategy with this set of parameters
+#         try:
+#             # Run the main function, which executes the experiment with the current parameters
+#             total_gains, total_gains_all = main()  # Assuming that `main()` now returns the total gain
+#             no_wins = sum([1 for gain in total_gains if gain > 0])
+#             no_wins_all = sum([1 for gain in total_gains_all if gain > 0])
+#
+#             # Log results to file
+#             with open(output_file, 'a') as f:
+#                 f.write(f"Parameters: {combo}\n")
+#                 f.write(f"Total Gain: {total_gains}\n")
+#                 f.write(f"Total Gain chosen on all Enemies: {total_gains_all}\n")
+#                 f.write(f"Number of wins: {no_wins}\n")
+#                 f.write(f"Number of wins chosen on all enemies: {no_wins_all}\n")
+#                 f.write("============================================================\n")
+#             # Open the CSV file in append mode
+#             with open(output_file_csv, 'a', newline='') as csvfile:
+#                 csvwriter = csv.writer(csvfile)
+#
+#                 # Write the header if the file is empty
+#                 if csvfile.tell() == 0:
+#                     csvwriter.writerow(['ISLAND_ENEMIES', 'migration_interval', 'migration_size', 'migration_type',
+#                                         'TOP_PERCENT', 'INIT_PERIOD', "COMMA_STRAT",'Total Gain', 'Total Gain chosen on All Enemies', 'Number of Wins', 'Number of Wins Chosen on All Enemies'])
+#
+#                 # Log results to CSV file
+#                 csvwriter.writerow(
+#                     [ISLAND_ENEMIES_GRID, migration_interval_GRID, migration_size_GRID, migration_type_GRID,
+#                      TOP_PERCENT_GRID, INIT_PERIOD_GRID, COMMA_STRAT_GRID, total_gains, total_gains_all, no_wins, no_wins_all])
+#
+#
+#         except Exception as e:
+#             # If there's an error in this combination, log it and continue
+#             print(f"Error with parameters {combo}: {e}")
+#             with open(output_file, 'a') as f:
+#                 f.write(f"Error with parameters {combo}: {e}\n")
+#                 f.write("============================================================\n")
+#             # Open the CSV file in append
+#             with open(output_file, 'a', newline='') as csvfile:
+#                 csvwriter = csv.writer(csvfile)
+#                 csvwriter.writerow(
+#                     [ISLAND_ENEMIES_GRID, migration_interval_GRID, migration_size_GRID, migration_type_GRID,
+#                      TOP_PERCENT_GRID, INIT_PERIOD_GRID, f"Error: {e}"])
+#
+#
+#         # shutil.rmtree(experiment_name_grid) # Delete the experiment folder after each run
+#
+#
+#     return
