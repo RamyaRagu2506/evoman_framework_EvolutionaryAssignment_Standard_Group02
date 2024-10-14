@@ -17,7 +17,7 @@ from demo_controller import player_controller
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_VARS = 265
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 60 # Number of generations
+DEFAULT_GENS = 200 # Number of generations
 
 # recombinantion parameters
 COMMA_STRAT = True
@@ -34,7 +34,7 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[1,2,3,4,5,6,7,8],[1,2,3,4,5,6,7,8], [1,4,6]] # enemies for each island
+ISLAND_ENEMIES = [[1, 2, 4], [1, 5, 6], [1, 2, 4, 7], [2, 4, 6, 8]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
 migration_size = 50 # Number of individuals to migrate
@@ -57,7 +57,7 @@ dom_l, dom_u = -1, 1
 
 
 ALL_ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8] # now only used to initialise the environment
-GET_STATS_AGAINST_ALL = False # get statistics against all enemies per generation
+GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
 # why you would want this is because you want to see how well the population performs against all enemies not just the ones they were trained on
 # you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
@@ -330,7 +330,7 @@ def save_population_state(population, fitness, generation, experiment_name):
     population_path = os.path.join(experiment_name, 'island_population.pkl')
     with open(population_path, 'wb') as f:
         pickle.dump([population, fitness, generation], f)
-    print("Population state saved successfully.")
+    # print("Population state saved successfully.")
 
 
 # Function to load the population and fitness values (solution state)
@@ -372,8 +372,8 @@ def save_generation_results(experiment_name, generation, best_fitness, mean_fitn
 
 
 # Function to save the final best solution and fitness
-def save_final_solution(experiment_name, best_solution, best_fitness):
-    solution_path = os.path.join(experiment_name, 'best_solution.txt')
+def save_final_solution(experiment_name, best_solution, best_fitness, suffix=""):
+    solution_path = os.path.join(experiment_name, f'best_solution{suffix}.txt')
     with open(solution_path, 'w') as file_aux:
         file_aux.write(f"Best Solution: {best_solution}\n")
         file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
@@ -390,6 +390,8 @@ def test_solution_against_all_enemies_loop(winner, title="Total gain against all
 
     total_gains = []
     total_fitnesses = []
+    player_lives = []
+    enemy_lives = []
 
     for enemy in all_enemies:
         # Set up the environment
@@ -402,11 +404,13 @@ def test_solution_against_all_enemies_loop(winner, title="Total gain against all
 
         total_fitnesses.append(fitness)
         total_gains.append(total_gain)
+        player_lives.append(player_life)
+        enemy_lives.append(enemy_life)
 
-        print(f"Enemy {enemy}: Fitness = {fitness}, Gain = {total_gain}")
+        print(f"Enemy {enemy}: Fitness = {fitness}, Gain = {total_gain}, Player Life = {player_life}, Enemy Life = {enemy_life}")
 
     print(title)
-    print(f"average fitness: {np.mean(total_fitnesses)}, average gain: {np.mean(total_gains)}")
+    print(f"average fitness: {np.mean(total_fitnesses)}, average gain: {np.mean(total_gains)}, average player life: {np.mean(player_lives)}, average enemy life: {np.mean(enemy_lives)}")
 
 
     # count how many wins (gain > 0)
@@ -471,7 +475,6 @@ def evaluate_fitnesses_against_all(world_population):
 
 # Main function
 def main():
-    GET_STATS_AGAINST_ALL = True
     ini = time.time()
 
     # Set up environment
@@ -506,7 +509,8 @@ def main():
     mean_fitness_against_all_list = []
     std_fitness_against_all_list = []
 
-    best_fitness_outside_loop_All = None
+    best_fitness_outside_loop_All = 0
+    best_solution_outside_loop_All = None
 
     # Run the evolution process for generations
     for gen in range(ini_g, DEFAULT_GENS):
@@ -536,10 +540,12 @@ def main():
             std_fitness_against_all_list.append(std_fitness_against_all)
 
             # Save the best solution OUTSIDE LOOP
-            if best_fitness_outside_loop_All is None or best_fitness_against_all > best_fitness_outside_loop_All:
+            if  best_fitness_against_all > best_fitness_outside_loop_All:
                 best_island_idx_all = np.argmax([np.max(fit) for fit in fitnesses_against_all])
                 best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
+                best_fitness_outside_loop_All = best_fitness_against_all
                 best_solution_outside_loop_All = world_population[best_island_idx_all][best_individual_idx_all].copy()  # Save the actual solution
+                print(f"Best solution against all enemies OUTSIDE THE LOOP updated with fitness {best_fitness_against_all:.6f}")
 
         # Store fitness results for plotting
         best_fitness_list.append(best_fitness)
@@ -605,6 +611,10 @@ def main():
 
     # Save the final solution
     save_final_solution(experiment_name, best_solution, best_fitness)
+    # save the best solution against all enemies
+    save_final_solution(experiment_name, best_solution_all, best_fitness_all, suffix="_all")
+    # save best solution outside loop
+    save_final_solution(experiment_name, best_solution_outside_loop_All, best_fitness_outside_loop_All, suffix="_outside_loop")
 
     # delete folders
     for i in range(n_islands):
