@@ -36,11 +36,11 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[1,5,7],[1,5,7],[1,5,7]] # enemies for each island
+ISLAND_ENEMIES = [[1,2,3,4,5,6,7,8],[1,2,3,4,5,6,7,8],[1,4,7]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
 migration_size = 50 # Number of individuals to migrate
-migration_type = "diversity" # Can be "similarity" or "diversity" or "best" or "random_best"
+migration_type = "random_best" # Can be "similarity" or "diversity" or "best" or "random_best"
 TOP_PERCENT = 0.3 # percentage of the population to consider for migration if choosing random individuals
 INIT_PERIOD = 50 #DEFAULT_GENS//2 - migration_interval # number of generations with the first set of enemies
 NEW_ISLAND_ENEMIES = ISLAND_ENEMIES# [[1,2,4],[7,6,2],[1,2,4],[1,2,4]] # enemies for each island after the initial period (should be the same length as island_enemies)
@@ -154,6 +154,10 @@ def gaussian_mutation(individual, step_size, tau=DEFAULT_TAU, tau_prime=DEFAULT_
     new_individual = individual + new_step_size * np.random.randn(*individual.shape) # Apply mutation
     return new_individual, new_step_size
 
+
+
+
+
 # Survivor selection (elitism)
 def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_size, pop_size):
     if COMMA_STRAT:
@@ -218,48 +222,28 @@ def similarity(source_island, source_island_fit,destination_best, migration_size
     return most_similar
 
 
-import numpy as np
-
-def diversity(source_island, source_island_fit, destination_best, migration_size): # Multikulti - base strategy
+def diversity(source_island, source_island_fit, destination_best, migration_size):
     """
-    Base Strategy: Selects the most diverse individual compared to the population (the best individual from the destination island).
-    Args:
-        source_island (np.ndarray): The population of individuals from the source island.
-        source_island_fit (np.ndarray): The fitness values of the source island individuals.
-        destination_best (np.ndarray): The best individual from the destination island.
-        migration_size (int): The number of individuals to migrate.
-    
-    Returns:
-        list: The most diverse individuals to migrate based on Manhattan distance.
+    Find the most diverse individuals in the source island to the best individual in the destination island
     """
-    # Make a copy of the source island to avoid modifying the original population
-    source_island_copy = source_island.copy()  # Keep it as np.ndarray for faster operations
+    source_island_copy = source_island.copy()
+    # get the best TOP_PERCENT
+    best_indices = np.argsort(source_island_fit)[-migration_size:]
+    source_island_copy = source_island[best_indices]
 
-    most_diverse = []  # List to store the most diverse individuals
+    most_diverse = []
     for _ in range(migration_size):
-        diversity_score = -np.inf  # Initialize diversity score
-        most_diverse_ind = None  # Variable to store the selected individual
-        most_diverse_index = -1  # Track index to remove it from the pool after selection
-        
-        # Iterate over the remaining individuals in the source island
+        diversity_score = 0
         for index, individual in enumerate(source_island_copy):
-            # Calculate the Manhattan distance using numpy
-            manhattan_distance = np.sum(np.abs(destination_best - individual))
-            
-            # If the current individual is more diverse (greater Manhattan distance), update the most_diverse_ind
-            if manhattan_distance > diversity_score:
-                diversity_score = manhattan_distance
+            difference = np.abs(destination_best - individual)
+            sum_diff = np.sum(difference)
+            if sum_diff > diversity_score:
+                diversity_score = sum_diff
                 most_diverse_ind = individual
                 most_diverse_index = index
-        
-        # Append the most diverse individual to the migration list
         most_diverse.append(most_diverse_ind)
-        
-        # Remove the selected individual from the source island copy
         source_island_copy = np.delete(source_island_copy, most_diverse_index, axis=0)
-
-    return most_diverse  # Return the result as a list
-
+    return most_diverse
 
 # function that returns the best individuals from source island
 def best_individuals(source_island, source_island_fit, migration_size):
