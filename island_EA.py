@@ -36,13 +36,13 @@ DEFAULT_ALPHA = 0.5
 DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
-ISLAND_ENEMIES = [[4, 2],[2,6],[7,8],[1,5]] # enemies for each island
+ISLAND_ENEMIES = [[1,2,3,4,5,6,7,8],[1,2,3,4,5,6,7,8],[1,4,7]] # enemies for each island
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
 migration_size = 50 # Number of individuals to migrate
 migration_type = "random_best" # Can be "similarity" or "diversity" or "best" or "random_best"
-TOP_PERCENT = 0.5 # percentage of the population to consider for migration if choosing random individuals
-INIT_PERIOD = 30 #DEFAULT_GENS//2 - migration_interval # number of generations with the first set of enemies
+TOP_PERCENT = 0.3 # percentage of the population to consider for migration if choosing random individuals
+INIT_PERIOD = 40 #DEFAULT_GENS//2 - migration_interval # number of generations with the first set of enemies
 NEW_ISLAND_ENEMIES = ISLAND_ENEMIES# [[1,2,4],[7,6,2],[1,2,4],[1,2,4]] # enemies for each island after the initial period (should be the same length as island_enemies)
 CHANGE_ENEMIES_AFTER_INIT = False # change the enemies after the initial period
 
@@ -59,7 +59,14 @@ dom_l, dom_u = -1, 1
 
 
 ALL_ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8] # now only used to initialise the environment
-GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
+GET_STATS_AGAINST_ALL = False # get statistics against all enemies per generation
+if GET_STATS_AGAINST_ALL: # cant both be true at the same time
+    GET_STATS_AGAINST_ALL_DURING_MIGRATION = False
+    print("GET_STATS_AGAINST_ALL is set to True, GET_STATS_AGAINST_ALL_DURING_MIGRATION is set to False")
+elif not GET_STATS_AGAINST_ALL:
+    GET_STATS_AGAINST_ALL_DURING_MIGRATION = True
+    print("GET_STATS_AGAINST_ALL_DURING_MIGRATION is set to True, GET_STATS_AGAINST_ALL is set to False")
+
 # why you would want this is because you want to see how well the population performs against all enemies not just the ones they were trained on
 # you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
@@ -345,13 +352,14 @@ def load_population_state(experiment_name):
 
 
 # Function to plot fitness over generations and save as an image
-def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name, title="Fitness_Over_Generations"):
+def plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name, title="Fitness_Over_Generations", eval_during_migration=False):
     plt.figure(figsize=(10, 6))
     plt.plot(generations, best_fitness_list, label='Best Fitness', color='b', marker='o')
     plt.plot(generations, mean_fitness_list, label='Mean Fitness', color='g', marker='x')
     plt.fill_between(generations, np.array(mean_fitness_list) - np.array(std_fitness_list),
                         np.array(mean_fitness_list) + np.array(std_fitness_list), color='r', alpha=0.2, label='Std Dev Fitness')
     # plt.plot(generations, std_fitness_list, label='Standard Deviation', color='r', marker='s')
+
     plt.xlabel('Generations')
     plt.ylabel('Fitness')
     plt.title(title)
@@ -417,7 +425,7 @@ def load_final_solution(experiment_name, suffix=""):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-    return None, None
+    return 0, 0
 
 
 
@@ -554,11 +562,12 @@ def evaluate_fitnesses_against_all(world_population):
 
 
 # Main function
-def main():
+def main(iteration=0):
     ini = time.time()
 
     # Set up environment
-    experiment_name = EXPERIMENT_NAME
+
+    experiment_name = f"EXPERIMENT_NAME_{iteration}"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
@@ -598,6 +607,7 @@ def main():
 
     # Run the evolution process for generations
     for gen in range(ini_g, DEFAULT_GENS):
+        gen_time = time.time()
 
         world_population, world_pop_fit, step_sizes = parallel_island_run(envs, world_population, world_pop_fit,
                                                                           step_sizes, mutation_rate)
@@ -646,12 +656,37 @@ def main():
 
 
         if gen % migration_interval == 0 and gen >= INIT_PERIOD:
-            world_population = migrate(world_population, world_pop_fit, migration_size, migration_type)
-            world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in enumerate(world_population)]
-            print(f"Migration at generation {gen} completed.")
+
+            if GET_STATS_AGAINST_ALL_DURING_MIGRATION:
+                fitnesses_against_all = evaluate_fitnesses_against_all(world_population)
+                best_fitness_against_all = np.max([np.max(fit) for fit in fitnesses_against_all])
+                mean_fitness_against_all = np.mean([np.mean(fit) for fit in fitnesses_against_all])
+                std_fitness_against_all = np.std([np.std(fit) for fit in fitnesses_against_all])
+                print(
+                    f"Best Fitness Against All Enemies on migration: {best_fitness_against_all:.6f}, Mean Fitness Against All Enemies on migration: {mean_fitness_against_all:.6f}, Standard Deviation Fitness Against All Enemies: {std_fitness_against_all:.6f}")
+
+                best_fitness_against_all_list.append(best_fitness_against_all)
+                mean_fitness_against_all_list.append(mean_fitness_against_all)
+                std_fitness_against_all_list.append(std_fitness_against_all)
+
+                # Save the best solution OUTSIDE LOOP
+                if best_fitness_against_all > best_fitness_outside_loop_All:
+                    best_island_idx_all = np.argmax([np.max(fit) for fit in fitnesses_against_all])
+                    best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
+                    best_fitness_outside_loop_All = best_fitness_against_all
+                    best_solution_outside_loop_All = world_population[best_island_idx_all][
+                        best_individual_idx_all].copy()  # Save the actual solution
+                    print(
+                        f"Best solution against all enemies OUTSIDE THE LOOP updated with fitness {best_fitness_against_all:.6f}")
+                # actually do the migration --------------------------------
+                world_population = migrate(world_population, world_pop_fit, migration_size, migration_type)
+                world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in
+                                 enumerate(world_population)]
+                print(f"Migration at generation {gen} completed.")
 
         # Save the population state every generation
         save_population_state(world_population, world_pop_fit, gen, experiment_name)
+        print(f"time for gen {gen}: {round((time.time() - gen_time), 2)} seconds")
 
     # Plot and save the fitness over generations
     generations = list(range(ini_g + 1, DEFAULT_GENS + 1))
@@ -660,6 +695,9 @@ def main():
     # Plot and save the fitness against all enemies over generations
     if GET_STATS_AGAINST_ALL:
         plot_fitness(generations, best_fitness_against_all_list, mean_fitness_against_all_list, std_fitness_against_all_list, experiment_name, title = "Fitness_Against_All_Enemies")
+    if GET_STATS_AGAINST_ALL_DURING_MIGRATION:
+        migration_ints = list(range(INIT_PERIOD, DEFAULT_GENS + 1, migration_interval))
+        plot_fitness(migration_ints, best_fitness_against_all_list, mean_fitness_against_all_list, std_fitness_against_all_list, experiment_name, title = "Fitness_Against_All_Enemies During Migration", eval_during_migration=True)
 
     # Find the best solution across all islands
     best_island_idx = np.argmax([np.max(fit) for fit in world_pop_fit])
@@ -673,7 +711,11 @@ def main():
         best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
         best_solution_all = world_population[best_island_idx_all][best_individual_idx_all]
         best_fitness_all = fitnesses_against_all[best_island_idx_all][best_individual_idx_all]
-
+    if GET_STATS_AGAINST_ALL_DURING_MIGRATION:
+        best_island_idx_all = np.argmax([np.max(fit) for fit in fitnesses_against_all])
+        best_individual_idx_all = np.argmax(fitnesses_against_all[best_island_idx_all])
+        best_solution_all = world_population[best_island_idx_all][best_individual_idx_all]
+        best_fitness_all = fitnesses_against_all[best_island_idx_all][best_individual_idx_all]
 
         # print(f"Best solution shape against all enemies: {best_solution_all.shape}")
         # print(f"Best fitness against all enemies: {best_fitness_all}")
@@ -691,8 +733,12 @@ def main():
         test_solution_against_all_enemies_multiplemode(best_solution_all)
 
         test_solution_against_all_enemies_loop(best_solution_outside_loop_All, title="outside loop")
+    if GET_STATS_AGAINST_ALL_DURING_MIGRATION:
+        print("Testing the best solution obtained by checking on all enemies (DURING MIGRATION)")
+        total_fitnesses_all, total_gains_all = test_solution_against_all_enemies_loop(best_solution_all, title="picked based on all enemies during migration")
+        test_solution_against_all_enemies_multiplemode(best_solution_all)
 
-
+        test_solution_against_all_enemies_loop(best_solution_outside_loop_All, title="outside loop during migration")
     # Save the final solution
     save_final_solution(experiment_name, best_solution, best_fitness)
     # save the best solution against all enemies
@@ -716,7 +762,8 @@ def main():
 
 if __name__ == "__main__":
     # grid_search_island_model_parameters()
-    main()
+    for i in range(10):
+        main(iteration=i)
 
 
 
