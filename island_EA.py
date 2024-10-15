@@ -19,7 +19,7 @@ from scipy.stats import wilcoxon
 DEFAULT_HIDDEN_NEURONS = 10
 DEFAULT_VARS = 265
 DEFAULT_POP_SIZE = 100  # Population size per island
-DEFAULT_GENS = 100 # Number of generations
+DEFAULT_GENS = 200 # Number of generations
 
 # recombinantion parameters
 COMMA_STRAT = True
@@ -59,7 +59,7 @@ dom_l, dom_u = -1, 1
 
 
 ALL_ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8] # now only used to initialise the environment
-GET_STATS_AGAINST_ALL = False # get statistics against all enemies per generation
+GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
 if GET_STATS_AGAINST_ALL: # cant both be true at the same time
     GET_STATS_AGAINST_ALL_DURING_MIGRATION = False
     print("GET_STATS_AGAINST_ALL is set to True, GET_STATS_AGAINST_ALL_DURING_MIGRATION is set to False")
@@ -71,7 +71,7 @@ elif not GET_STATS_AGAINST_ALL:
 # you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
 
-EXPERIMENT_NAME = f"island_{migration_type}_{migration_interval}_{migration_size}_{ISLAND_ENEMIES}_{COMMA_STRAT}"
+EXPERIMENT_NAME = f"pro_island_{DEFAULT_GENS}gens_{migration_type}_{ISLAND_ENEMIES}"
 
 
 headless = True # set to False to see the game (along with the visuals=True parameter in the environment setup)
@@ -565,9 +565,7 @@ def evaluate_fitnesses_against_all(world_population):
 def main(iteration=0):
     ini = time.time()
 
-    # Set up environment
-
-    experiment_name = f"EXPERIMENT_NAME_{iteration}"
+    experiment_name = f"{EXPERIMENT_NAME}_iter{iteration}"
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
@@ -640,6 +638,8 @@ def main(iteration=0):
                 best_fitness_outside_loop_All = best_fitness_against_all
                 best_solution_outside_loop_All = world_population[best_island_idx_all][best_individual_idx_all].copy()  # Save the actual solution
                 print(f"Best solution against all enemies OUTSIDE THE LOOP updated with fitness {best_fitness_against_all:.6f}")
+                save_final_solution(experiment_name, best_solution_outside_loop_All, best_fitness_outside_loop_All,
+                                    suffix="_outside_loop")
 
         # Store fitness results for plotting
         best_fitness_list.append(best_fitness)
@@ -678,6 +678,9 @@ def main(iteration=0):
                         best_individual_idx_all].copy()  # Save the actual solution
                     print(
                         f"Best solution against all enemies OUTSIDE THE LOOP updated with fitness {best_fitness_against_all:.6f}")
+                    save_final_solution(experiment_name, best_solution_outside_loop_All, best_fitness_outside_loop_All,
+                                        suffix="_outside_loop")
+
                 # actually do the migration --------------------------------
                 world_population = migrate(world_population, world_pop_fit, migration_size, migration_type)
                 world_pop_fit = [evaluate_fitnesses(envs[i], one_island_pop) for i, one_island_pop in
@@ -689,7 +692,7 @@ def main(iteration=0):
         print(f"time for gen {gen}: {round((time.time() - gen_time), 2)} seconds")
 
     # Plot and save the fitness over generations
-    generations = list(range(ini_g + 1, DEFAULT_GENS + 1))
+    generations = list(range(ini_g+1, DEFAULT_GENS + 1))
     plot_fitness(generations, best_fitness_list, mean_fitness_list, std_fitness_list, experiment_name, title = "Fitness Over Generations")
 
     # Plot and save the fitness against all enemies over generations
@@ -748,7 +751,7 @@ def main(iteration=0):
 
     # delete folders
     for i in range(n_islands):
-        shutil.rmtree(f"{EXPERIMENT_NAME}_island_{i}")
+        shutil.rmtree(f"{experiment_name}_island_{i}")
     shutil.rmtree("test_env")
     shutil.rmtree("test_env_multiplemode")
     # shutil.rmtree(EXPERIMENT_NAME)
