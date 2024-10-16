@@ -100,6 +100,8 @@ def plot_fitness_over_generations(best_df, mean_df, title):
     plt.title(title)
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
+    plt.ylim(0, 100)
+    plt.xlim(0, 200)
     plt.legend()
     plt.show()
 
@@ -181,64 +183,13 @@ def setup_environment(experiment_name, controller, enemies, multiplemode="yes", 
     )
 
 
-def evaluate_fitnesses(env, population):
-    fitnesses, p, e, t = Parallel(n_jobs=-1)(
-        delayed(run_game_in_worker)(env.experiment_name, env.player_controller, env.enemies, ind) for ind in population
-    )
-    return fitnesses, p, e, t
 
-
-def run_game_in_worker(experiment_name, controller, enemies, ind):
-    env = setup_environment(experiment_name, controller, enemies)
-    return simulation(env, ind)
-
-
-# Simulation function
-def simulation(env, x):
-    f, p, e, t = env.play(pcont=x)
-    return f, p, e, t
-
-
-
-# Example usage:
-root_folder = "final_runs_generalist"
-random_best_1_8_best, random_best_1_8_mean, random_best_1_8_sd = categorize_and_aggregate(root_folder, "random_best_1_8")
-random_best_1_5_7_best, random_best_1_5_7_mean, random_best_1_5_7_sd = categorize_and_aggregate(root_folder, "random_best_1_5_7")
-diversity_1_8_best, diversity_1_8_mean, diversity_1_8_sd = categorize_and_aggregate(root_folder, "diversity_1_8")
-diversity_1_5_7_best, diversity_1_5_7_mean, diversity_1_5_7_sd = categorize_and_aggregate(root_folder, "diversity_1_5_7")
-
-# Plot the fitness over generations
-plot_fitness_over_generations(random_best_1_8_best, random_best_1_8_mean, "Random Best 1-8")
-
-# ---------------------------- EA1
-best_solutions_random_best_1_8_loop, best_fitnesses_random_best_1_8_loop = load_final_solutions(root_folder, "random_best_1_8", suffix="_outside_loop")
-best_solutions_random_best_1_8_all, best_fitnesses_random_best_1_8_all = load_final_solutions(root_folder, "random_best_1_8", suffix="_all")
-best_solutions_random_best_1_8_subset, best_fitnesses_random_best_1_8_subset = load_final_solutions(root_folder, "random_best_1_8", suffix="")
-
-best_solutions_random_best_1_5_7_loop, best_fitnesses_random_best_1_5_7_loop = load_final_solutions(root_folder, "random_best_1_5_7", suffix="_outside_loop")
-best_solutions_random_best_1_5_7_all, best_fitnesses_random_best_1_5_7_all = load_final_solutions(root_folder, "random_best_1_5_7", suffix="_all")
-best_solutions_random_best_1_5_7_subset, best_fitnesses_random_best_1_5_7_subset = load_final_solutions(root_folder, "random_best_1_5_7", suffix="")
-
-# ---------------------------- EA2
-best_solutions_diversity_1_8_loop, best_fitnesses_diversity_1_8_loop = load_final_solutions(root_folder, "diversity_1_8", suffix="_outside_loop")
-best_solutions_diversity_1_8_all, best_fitnesses_diversity_1_8_all = load_final_solutions(root_folder, "diversity_1_8", suffix="_all")
-best_solutions_diversity_1_8_subset, best_fitnesses_diversity_1_8_subset = load_final_solutions(root_folder, "diversity_1_8", suffix="")
-
-best_solutions_diversity_1_5_7_loop, best_fitnesses_diversity_1_5_7_loop = load_final_solutions(root_folder, "diversity_1_5_7", suffix="_outside_loop")
-best_solutions_diversity_1_5_7_all, best_fitnesses_diversity_1_5_7_all = load_final_solutions(root_folder, "diversity_1_5_7", suffix="_all")
-best_solutions_diversity_1_5_7_subset, best_fitnesses_diversity_1_5_7_subset = load_final_solutions(root_folder, "diversity_1_5_7", suffix="")
-
-# Load the controller
-controller = player_controller(10)
-
-# Set up the environment
-
-# Test the best solutions
 
 def test_solutions(solutions_list):
     headless = True
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
+    controller = player_controller(10)
     env = setup_environment("test", controller, [1, 2, 3, 4, 5, 6, 7, 8], visuals=False)
 
     gains = []
@@ -269,32 +220,84 @@ def test_solutions(solutions_list):
     print(f"Gains: {gains}")
     return gains
 
-# Test the best solutions
-gains_random_best_1_8_loop = test_solutions(best_solutions_random_best_1_8_loop)
-# gains_random_best_1_8_all = test_solutions(best_solutions_random_best_1_8_all)
-gains_random_best_1_8_subset = test_solutions(best_solutions_random_best_1_8_subset)
 
-gains_random_best_1_5_7_loop = test_solutions(best_solutions_random_best_1_5_7_loop)
-# gains_random_best_1_5_7_all = test_solutions(best_solutions_random_best_1_5_7_all)
-gains_random_best_1_5_7_subset = test_solutions(best_solutions_random_best_1_5_7_subset)
-
-gains_diversity_1_8_loop = test_solutions(best_solutions_diversity_1_8_loop)
-# gains_diversity_1_8_all = test_solutions(best_solutions_diversity_1_8_all)
-gains_diversity_1_8_subset = test_solutions(best_solutions_diversity_1_8_subset)
-
-gains_diversity_1_5_7_loop = test_solutions(best_solutions_diversity_1_5_7_loop)
-# gains_diversity_1_5_7_all = test_solutions(best_solutions_diversity_1_5_7_all)
-gains_diversity_1_5_7_subset = test_solutions(best_solutions_diversity_1_5_7_subset)
 
 # function that box plots 4 lists of gains on the same subplot
 def plot_gains(gains_ea1_enemy1, gains_ea1_enemy2, gains_ea2_enemy1, gains_ea2_enemy2, title):
     plt.figure(figsize=(10, 6))
     plt.boxplot([gains_ea1_enemy1, gains_ea1_enemy2, gains_ea2_enemy1, gains_ea2_enemy2])
     plt.title(title)
-    plt.xticks([1, 2, 3, 4], ["EA1 Enemy 1", "EA1 Enemy 2", "EA2 Enemy 1", "EA2 Enemy 2"])
+    plt.xticks([1, 2, 3, 4], ["EA1 [1,2,3,4,5,6,7,8]", "EA1 [1,5,7]", "EA2 [1,2,3,4,5,6,7,8]", "EA2 [1,5,7]"])
+    plt.ylabel("Gains")
+    plt.ylim(-100, 100)
+
+    # Perform Wilcoxon signed-rank test if significantly different from 0
+    for i, gains in enumerate([gains_ea1_enemy1, gains_ea1_enemy2, gains_ea2_enemy1, gains_ea2_enemy2]):
+        w, p = wilcoxon(gains, alternative='two-sided')
+        if p < 0.05:
+            plt.text(i + 1, 90, f"p={p:.3f}", ha='center', va='center', backgroundcolor='white', color='red')
+        else:
+            plt.text(i + 1, 90, f"p={p:.3f}", ha='center', va='center', backgroundcolor='white')
     plt.show()
 
+
+
+
+# Example usage:
+root_folder = "final_runs_generalist"
+random_best_1_8_best, random_best_1_8_mean, random_best_1_8_sd = categorize_and_aggregate(root_folder, "random_best_1_8")
+random_best_1_5_7_best, random_best_1_5_7_mean, random_best_1_5_7_sd = categorize_and_aggregate(root_folder, "random_best_1_5_7")
+diversity_1_8_best, diversity_1_8_mean, diversity_1_8_sd = categorize_and_aggregate(root_folder, "diversity_1_8")
+diversity_1_5_7_best, diversity_1_5_7_mean, diversity_1_5_7_sd = categorize_and_aggregate(root_folder, "diversity_1_5_7")
+
+# Plot the fitness over generations
+plot_fitness_over_generations(random_best_1_8_best, random_best_1_8_mean, "Random Best 1-8")
+plot_fitness_over_generations(random_best_1_5_7_best, random_best_1_5_7_mean, "Random Best 1-5-7")
+plot_fitness_over_generations(diversity_1_8_best, diversity_1_8_mean, "Diversity 1-8")
+plot_fitness_over_generations(diversity_1_5_7_best, diversity_1_5_7_mean, "Diversity 1-5-7")
+
+###################### GAINS ######################
+# ---------------------------- EA1
+best_solutions_random_best_1_8_loop, best_fitnesses_random_best_1_8_loop = load_final_solutions(root_folder, "random_best_1_8", suffix="_outside_loop")
+best_solutions_random_best_1_8_all, best_fitnesses_random_best_1_8_all = load_final_solutions(root_folder, "random_best_1_8", suffix="_all")
+best_solutions_random_best_1_8_subset, best_fitnesses_random_best_1_8_subset = load_final_solutions(root_folder, "random_best_1_8", suffix="")
+
+best_solutions_random_best_1_5_7_loop, best_fitnesses_random_best_1_5_7_loop = load_final_solutions(root_folder, "random_best_1_5_7", suffix="_outside_loop")
+best_solutions_random_best_1_5_7_all, best_fitnesses_random_best_1_5_7_all = load_final_solutions(root_folder, "random_best_1_5_7", suffix="_all")
+best_solutions_random_best_1_5_7_subset, best_fitnesses_random_best_1_5_7_subset = load_final_solutions(root_folder, "random_best_1_5_7", suffix="")
+
+# ---------------------------- EA2
+best_solutions_diversity_1_8_loop, best_fitnesses_diversity_1_8_loop = load_final_solutions(root_folder, "diversity_1_8", suffix="_outside_loop")
+best_solutions_diversity_1_8_all, best_fitnesses_diversity_1_8_all = load_final_solutions(root_folder, "diversity_1_8", suffix="_all")
+best_solutions_diversity_1_8_subset, best_fitnesses_diversity_1_8_subset = load_final_solutions(root_folder, "diversity_1_8", suffix="")
+
+best_solutions_diversity_1_5_7_loop, best_fitnesses_diversity_1_5_7_loop = load_final_solutions(root_folder, "diversity_1_5_7", suffix="_outside_loop")
+best_solutions_diversity_1_5_7_all, best_fitnesses_diversity_1_5_7_all = load_final_solutions(root_folder, "diversity_1_5_7", suffix="_all")
+best_solutions_diversity_1_5_7_subset, best_fitnesses_diversity_1_5_7_subset = load_final_solutions(root_folder, "diversity_1_5_7", suffix="")
+
+
+
+# Test the best solutions
+gains_random_best_1_8_loop = test_solutions(best_solutions_random_best_1_8_loop)
+gains_random_best_1_5_7_loop = test_solutions(best_solutions_random_best_1_5_7_loop)
+gains_diversity_1_8_loop = test_solutions(best_solutions_diversity_1_8_loop)
+gains_diversity_1_5_7_loop = test_solutions(best_solutions_diversity_1_5_7_loop)
+
 # Plot the gains
-plot_gains(gains_random_best_1_8_loop, gains_random_best_1_5_7_loop, gains_diversity_1_8_loop, gains_diversity_1_5_7_loop, "Gains Loop")
+plot_gains(gains_random_best_1_8_loop, gains_random_best_1_5_7_loop, gains_diversity_1_8_loop, gains_diversity_1_5_7_loop, "Gains From Soulutions Kept Outside Loop")
 
 
+gains_diversity_1_5_7_subset = test_solutions(best_solutions_diversity_1_5_7_subset)
+gains_diversity_1_8_subset = test_solutions(best_solutions_diversity_1_8_subset)
+gains_random_best_1_5_7_subset = test_solutions(best_solutions_random_best_1_5_7_subset)
+gains_random_best_1_8_subset = test_solutions(best_solutions_random_best_1_8_subset)
+
+plot_gains(gains_random_best_1_8_subset, gains_random_best_1_5_7_subset, gains_diversity_1_8_subset, gains_diversity_1_5_7_subset, "Gains From Best Solutions")
+
+
+gains_diversity_1_5_7_all = test_solutions(best_solutions_diversity_1_5_7_all)
+gains_diversity_1_8_all = test_solutions(best_solutions_diversity_1_8_all)
+gains_random_best_1_5_7_all = test_solutions(best_solutions_random_best_1_5_7_all)
+gains_random_best_1_8_all = test_solutions(best_solutions_random_best_1_8_all)
+
+plot_gains(gains_random_best_1_8_all, gains_random_best_1_5_7_all, gains_diversity_1_8_all, gains_diversity_1_5_7_all, "Gains From All Solutions")
