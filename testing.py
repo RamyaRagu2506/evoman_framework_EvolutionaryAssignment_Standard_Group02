@@ -74,7 +74,7 @@ def setup_environment(experiment_name, controller, enemies, multiplemode="yes", 
     )
 
 
-exp_name = "island_random_best_10_50_[[1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 4, 7]]_True"
+exp_name = "old tries/island_random_best_10_50_[[1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 4, 7]]_True"
 
 controller = player_controller(10)
 
