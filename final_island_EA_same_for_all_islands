@@ -37,6 +37,7 @@ DEFAULT_EPSILON = 1e-8
 
 # Island model parameters
 ISLAND_ENEMIES = [[1,5,7],[1,5,7],[1,5,7]] # enemies for each island
+ISLAND_ENEMY = [1,5,7] # mentioned for the purpose of experiment name 
 n_islands = len(ISLAND_ENEMIES)
 migration_interval = 10 # Every n generations
 migration_size = 50 # Number of individuals to migrate
@@ -64,7 +65,7 @@ GET_STATS_AGAINST_ALL = True # get statistics against all enemies per generation
 # you want to turn it off if you want faster training and only see at the end how it performed against all enemies
 
 
-EXPERIMENT_NAME = f"pro_island_{DEFAULT_GENS}gens_{migration_type}_{ISLAND_ENEMIES}"
+EXPERIMENT_NAME = f"pro_island_same_{DEFAULT_GENS}gens_{migration_type}_{ISLAND_ENEMY}"
 
 
 headless = True # set to False to see the game (along with the visuals=True parameter in the environment setup)
@@ -154,6 +155,10 @@ def gaussian_mutation(individual, step_size, tau=DEFAULT_TAU, tau_prime=DEFAULT_
     new_individual = individual + new_step_size * np.random.randn(*individual.shape) # Apply mutation
     return new_individual, new_step_size
 
+
+
+
+
 # Survivor selection (elitism)
 def survivor_selection_elitism(pop, fit_pop, step_sizes, fit_offspring, offspring, offspring_step_size, pop_size):
     if COMMA_STRAT:
@@ -217,9 +222,6 @@ def similarity(source_island, source_island_fit,destination_best, migration_size
 
     return most_similar
 
-
-import numpy as np
-
 def diversity(source_island, source_island_fit, destination_best, migration_size): # Multikulti - base strategy
     """
     Base Strategy: Selects the most diverse individual compared to the population (the best individual from the destination island).
@@ -259,7 +261,6 @@ def diversity(source_island, source_island_fit, destination_best, migration_size
         source_island_copy = np.delete(source_island_copy, most_diverse_index, axis=0)
 
     return most_diverse  # Return the result as a list
-
 
 # function that returns the best individuals from source island
 def best_individuals(source_island, source_island_fit, migration_size):
@@ -396,8 +397,7 @@ def save_final_solution(experiment_name, best_solution, best_fitness, suffix="")
     with open(solution_path, 'w') as file_aux:
         file_aux.write(f"Best Solution: {np.array2string(best_solution)}\n")
         file_aux.write(f"Best Fitness: {best_fitness:.6f}\n")
-import os
-import numpy as np
+
 
 def load_final_solution(experiment_name, suffix=""):
     solution_path = os.path.join(experiment_name, f'best_solution{suffix}.txt')
